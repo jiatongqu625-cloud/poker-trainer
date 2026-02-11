@@ -201,6 +201,10 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
     bullets.push("Facing turn/river barrels often shifts toward more polarized continue ranges and stronger blocker considerations.");
     glossary.push("MDF", "Polar");
   }
+  if (node.includes("VS_RAISE") || node.includes("FACING_RAISE")) {
+    bullets.push("Facing raises compresses ranges: continue tighter, and think in terms of value/bluff combos rather than pure MDF.");
+    glossary.push("Polar");
+  }
   if (node.includes("BARREL") || node.includes("TRIPLE")) {
     bullets.push("Turn/river barreling nodes depend heavily on equity realization and blockers; ranges often polarize as streets progress.");
     glossary.push("Polar");
@@ -216,18 +220,22 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
     node.includes("FACING_RAISE")
   ) {
     const isXRNode = node.includes("XR");
+    const isRaiseNode = node.includes("RAISE");
+
     const base: MixedStrategy = isXRNode
-      ? { FOLD: 0.4, CALL: 0.0, RAISE_75: 0.6 }
-      : { FOLD: 0.25, CALL: 0.6, RAISE_75: 0.15 };
+      ? { FOLD: 0.4, RAISE_75: 0.6 }
+      : isRaiseNode
+        ? { FOLD: 0.45, CALL: 0.4, RAISE_75: 0.15 }
+        : { FOLD: 0.25, CALL: 0.6, RAISE_75: 0.15 };
     if (texture === "twoTone" || texture === "two-tone") {
-      base.FOLD = 0.22;
-      base.CALL = 0.58;
-      base.RAISE_75 = 0.2;
+      base.FOLD = isRaiseNode ? 0.42 : 0.22;
+      if (base.CALL != null) base.CALL = isRaiseNode ? 0.38 : 0.58;
+      base.RAISE_75 = isRaiseNode ? 0.2 : 0.2;
     }
     if (texture === "paired") {
-      base.FOLD = 0.28;
-      base.CALL = 0.62;
-      base.RAISE_75 = 0.1;
+      base.FOLD = isRaiseNode ? 0.5 : 0.28;
+      if (base.CALL != null) base.CALL = isRaiseNode ? 0.4 : 0.62;
+      base.RAISE_75 = isRaiseNode ? 0.1 : 0.1;
     }
     return {
       strategy: base,

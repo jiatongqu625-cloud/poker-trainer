@@ -26,5 +26,9 @@ export const ACTIONS_XR: ActionOption[] = [
 
 export function allowedActionsForNode(node: string): ActionOption[] {
   if (isXRNode(node)) return ACTIONS_XR;
+
+  // Facing raises (after we bet) — still a defense/response node.
+  if (node.includes("FACING_RAISE") || node.includes("VS_RAISE")) return ACTIONS_DEFENSE;
+
   return nodeKind(node) === "DEFENSE" ? ACTIONS_DEFENSE : ACTIONS_BETTING;
 }
