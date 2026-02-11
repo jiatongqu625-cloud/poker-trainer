@@ -1,11 +1,46 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { DEFAULT_NODE, TRAINING_NODES } from "@/lib/nodes";
+import { useEffect, useMemo, useState } from "react";
+import { DEFAULT_NODE, TRAINING_NODES, type TrainingNode } from "@/lib/nodes";
 
 export default function ScenarioForm() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Quick builder → maps human inputs to a canonical trainingNode.
+  const [street, setStreet] = useState<"FLOP" | "TURN" | "RIVER">("FLOP");
+  const [role, setRole] = useState<"AGGRESSOR" | "DEFENDER">("AGGRESSOR");
+  const [posRel, setPosRel] = useState<"IP" | "OOP">("IP");
+  const [line, setLine] = useState<"CBET" | "VS_CBET" | "XR" | "PROBE" | "DELAYED">("CBET");
+
+  const suggestedNode: TrainingNode = useMemo(() => {
+    if (street === "FLOP") {
+      if (line === "XR") return "FLOP_VS_CBET_XR";
+      if (line === "VS_CBET") return posRel === "IP" ? "FLOP_IP_VS_CBET" : "FLOP_OOP_VS_CBET";
+      if (line === "PROBE") return "FLOP_PROBE";
+      if (line === "DELAYED") return "FLOP_DELAYED_CBET";
+      return posRel === "IP" ? "FLOP_IP_CBET" : "FLOP_OOP_CBET";
+    }
+
+    if (street === "TURN") {
+      if (line === "VS_CBET") return posRel === "IP" ? "TURN_IP_VS_BARREL" : "TURN_OOP_VS_BARREL";
+      if (line === "PROBE") return "TURN_PROBE";
+      if (line === "DELAYED") return "TURN_DELAYED_CBET";
+      return "TURN_BARREL";
+    }
+
+    // RIVER
+    if (line === "VS_CBET") return posRel === "IP" ? "RIVER_IP_VS_TRIPLE" : "RIVER_OOP_VS_TRIPLE";
+    if (line === "DELAYED") return "RIVER_DELAYED_BARREL";
+    return "RIVER_TRIPLE_BARREL";
+  }, [street, line, posRel]);
+
+  const [trainingNodeState, setTrainingNodeState] = useState<TrainingNode>(DEFAULT_NODE);
+
+  useEffect(() => {
+    // Keep the canonical node in sync with the quick builder (user can still override manually).
+    setTrainingNodeState(suggestedNode);
+  }, [suggestedNode]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -26,7 +61,7 @@ export default function ScenarioForm() {
     const aggressor = String(formData.get("aggressor") || heroPos);
     const callers = Number(formData.get("callers") || 1);
 
-    const trainingNode = String(formData.get("trainingNode") || DEFAULT_NODE);
+    const trainingNode = String(trainingNodeState || formData.get("trainingNode") || DEFAULT_NODE);
 
     const preflopConfig = {
       potType,
@@ -141,7 +176,36 @@ export default function ScenarioForm() {
         <input name="aggressor" placeholder="Preflop aggressor position (e.g. BTN)" />
         <input name="callers" type="number" min="0" defaultValue={1} placeholder="# of callers" />
 
-        <select name="trainingNode" defaultValue={DEFAULT_NODE}>
+        <div className="card space-y-2 md:col-span-2">
+          <div className="text-sm font-semibold">Quick spot builder</div>
+          <div className="grid md:grid-cols-4 gap-2">
+            <select value={street} onChange={(e) => setStreet(e.target.value as any)}>
+              <option value="FLOP">Flop</option>
+              <option value="TURN">Turn</option>
+              <option value="RIVER">River</option>
+            </select>
+            <select value={role} onChange={(e) => setRole(e.target.value as any)}>
+              <option value="AGGRESSOR">I am the aggressor</option>
+              <option value="DEFENDER">I am defending</option>
+            </select>
+            <select value={posRel} onChange={(e) => setPosRel(e.target.value as any)}>
+              <option value="IP">In position (IP)</option>
+              <option value="OOP">Out of position (OOP)</option>
+            </select>
+            <select value={line} onChange={(e) => setLine(e.target.value as any)}>
+              <option value="CBET">C-bet / bet</option>
+              <option value="VS_CBET">Facing bet (defense)</option>
+              <option value="XR">Check-raise node</option>
+              <option value="PROBE">Probe</option>
+              <option value="DELAYED">Delayed</option>
+            </select>
+          </div>
+          <div className="text-xs text-white/60">
+            Suggested node: <span className="font-semibold">{suggestedNode}</span>
+          </div>
+        </div>
+
+        <select name="trainingNode" value={trainingNodeState} onChange={(e) => setTrainingNodeState(e.target.value as any)}>
           {TRAINING_NODES.map((n) => (
             <option key={n.value} value={n.value}>
               {n.label}

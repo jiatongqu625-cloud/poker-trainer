@@ -48,3 +48,14 @@ export const TRAINING_NODES: { value: TrainingNode; label: string; street: "FLOP
 ];
 
 export const DEFAULT_NODE: TrainingNode = "FLOP_CBET";
+
+export type NodeKind = "BETTING" | "DEFENSE";
+
+export function nodeKind(node: string): NodeKind {
+  if (node.includes("VS_CBET") || node.includes("VS_BARREL") || node.includes("VS_TRIPLE")) return "DEFENSE";
+  return "BETTING";
+}
+
+export function isXRNode(node: string) {
+  return node.includes("XR");
+}

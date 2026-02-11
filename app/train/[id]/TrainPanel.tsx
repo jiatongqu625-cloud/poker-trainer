@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GLOSSARY } from "@/lib/glossary";
+import { isXRNode, nodeKind } from "@/lib/nodes";
 
 type MixedStrategy = Record<string, number>;
 
@@ -35,12 +36,17 @@ const ACTIONS_CBET = [
   { label: "Bet 75% pot", value: "BET_75" }
 ] as const;
 
-const ACTIONS_VS_CBET = [
+const ACTIONS_DEFENSE = [
   { label: "Fold", value: "FOLD" },
   { label: "Call", value: "CALL" },
   { label: "Raise 33% pot", value: "RAISE_33" },
   { label: "Raise 75% pot", value: "RAISE_75" },
   { label: "Jam", value: "JAM" }
+] as const;
+
+const ACTIONS_XR = [
+  { label: "Check", value: "CHECK" },
+  { label: "Raise 75% pot", value: "RAISE_75" }
 ] as const;
 
 export default function TrainPanel({ scenario }: { scenario: Scenario }) {
@@ -65,7 +71,9 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
     });
     const data = await res.json();
     setHand(data);
-    setAction(((data?.node ?? "").includes("VS_CBET") ? ACTIONS_VS_CBET : ACTIONS_CBET)[0].value);
+    const node = String(data?.node ?? "");
+    const list = isXRNode(node) ? ACTIONS_XR : nodeKind(node) === "DEFENSE" ? ACTIONS_DEFENSE : ACTIONS_CBET;
+    setAction(list[0].value);
     setLoading(false);
   }
 
@@ -187,7 +195,12 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
             <p className="text-sm text-white/50">Your action</p>
             <div className="flex flex-wrap gap-2">
               <select value={action} onChange={(event) => setAction(event.target.value)}>
-                {((hand?.node ?? "").includes("VS_CBET") ? ACTIONS_VS_CBET : ACTIONS_CBET).map((item) => (
+                {(isXRNode(hand?.node ?? "")
+                  ? ACTIONS_XR
+                  : nodeKind(hand?.node ?? "") === "DEFENSE"
+                    ? ACTIONS_DEFENSE
+                    : ACTIONS_CBET
+                ).map((item) => (
                   <option key={item.value} value={item.value}>
                     {item.label}
                   </option>
