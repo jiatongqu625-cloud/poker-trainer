@@ -197,6 +197,10 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
     bullets.push("This node is about defending vs a continuation bet: actions are typically Fold/Call/Raise (not betting). Use MDF as a baseline, then adjust by range/position/runouts.");
     glossary.push("CBet", "MDF");
   }
+  if (node.includes("VS_BARREL") || node.includes("VS_TRIPLE")) {
+    bullets.push("Facing turn/river barrels often shifts toward more polarized continue ranges and stronger blocker considerations.");
+    glossary.push("MDF", "Polar");
+  }
   if (node.includes("BARREL") || node.includes("TRIPLE")) {
     bullets.push("Turn/river barreling nodes depend heavily on equity realization and blockers; ranges often polarize as streets progress.");
     glossary.push("Polar");
@@ -204,7 +208,7 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
 
   // NOTE: MVP heuristic strategy. Replaceable with solver-backed engine later.
   // Defense nodes: output Fold/Call/Raise mix.
-  if (node.includes("VS_CBET")) {
+  if (node.includes("VS_CBET") || node.includes("VS_BARREL") || node.includes("VS_TRIPLE")) {
     const isXRNode = node.includes("XR");
     const base: MixedStrategy = isXRNode
       ? { FOLD: 0.4, CALL: 0.0, RAISE_75: 0.6 }
@@ -265,13 +269,20 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
     };
   }
 
-  // Probe / delayed nodes (MVP): prefer bigger bets less often; more checks.
-  if (node.includes("PROBE") || node.includes("DELAYED")) {
+  // Probe / delayed / donk nodes (MVP): prefer bigger bets less often; more checks.
+  if (node.includes("PROBE") || node.includes("DELAYED") || node.includes("DONK")) {
     return {
       strategy: { CHECK: 0.5, BET_33: 0.35, BET_75: 0.15 },
-      reason: "Probe/delayed nodes often use smaller sizings and higher checking to keep ranges protected.",
-      bullets: [...bullets, "When the previous street checked through, ranges are wider; prefer small bets and protect checks."],
-      glossary: [...glossary, "RangeBet"],
+      reason: node.includes("DONK")
+        ? "Donk/probe/delayed nodes often use smaller sizings and higher checking to keep ranges protected."
+        : "Probe/delayed nodes often use smaller sizings and higher checking to keep ranges protected.",
+      bullets: [
+        ...bullets,
+        node.includes("DONK")
+          ? "Leading into the aggressor is uncommon in many pools; use it selectively with strong hands/draws and some protection bets."
+          : "When the previous street checked through, ranges are wider; prefer small bets and protect checks."
+      ],
+      glossary: node.includes("DONK") ? [...glossary, "Donk"] : [...glossary, "RangeBet", "Probe", "DelayedCBet"],
       spr
     };
   }

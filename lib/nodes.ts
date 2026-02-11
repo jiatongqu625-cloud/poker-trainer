@@ -4,7 +4,8 @@ export type TrainingNode =
   | "FLOP_IP_CBET"
   | "FLOP_OOP_CBET"
   | "FLOP_DELAYED_CBET" // missed flop cbet, betting now is not represented yet (MVP label)
-  | "FLOP_PROBE" // flop bet after PFR checked? (MVP)
+  | "FLOP_PROBE" // flop probe (label)
+  | "FLOP_DONK" // flop donk bet (label)
 
   // Flop — defense nodes
   | "FLOP_OOP_VS_CBET"
@@ -30,6 +31,7 @@ export const TRAINING_NODES: { value: TrainingNode; label: string; street: "FLOP
   { value: "FLOP_OOP_CBET", label: "Flop: OOP c-bet", street: "FLOP" },
   { value: "FLOP_DELAYED_CBET", label: "Flop: delayed c-bet (label)", street: "FLOP" },
   { value: "FLOP_PROBE", label: "Flop: probe bet (label)", street: "FLOP" },
+  { value: "FLOP_DONK", label: "Flop: donk bet (label)", street: "FLOP" },
 
   { value: "FLOP_IP_VS_CBET", label: "Flop: IP vs c-bet", street: "FLOP" },
   { value: "FLOP_OOP_VS_CBET", label: "Flop: OOP vs c-bet", street: "FLOP" },

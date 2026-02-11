@@ -8,7 +8,10 @@ export type GlossaryKey =
   | "CBet"
   | "RangeBet"
   | "Polar"
-  | "MDF";
+  | "MDF"
+  | "Probe"
+  | "DelayedCBet"
+  | "Donk";
 
 export const GLOSSARY: Record<GlossaryKey, { term: string; definition: string; example?: string }> = {
   SPR: {
@@ -55,6 +58,24 @@ export const GLOSSARY: Record<GlossaryKey, { term: string; definition: string; e
     definition:
       "How often you must continue (call/raise) versus a bet to prevent the bettor from profiting with any two cards. In practice, MDF is a baseline; real defense depends on ranges and future streets.",
     example: "Versus a pot-size bet, MDF is 50%. Versus a half-pot bet, MDF is ~67%."
+  },
+  Probe: {
+    term: "Probe bet",
+    definition:
+      "A bet made by the player who was NOT the preflop aggressor, typically after the aggressor checks on the previous street.",
+    example: "PFR checks flop, caller bets turn → turn probe."
+  },
+  DelayedCBet: {
+    term: "Delayed c-bet",
+    definition:
+      "A continuation bet made on a later street after the preflop aggressor checked the flop (i.e., you 'delay' your c-bet).",
+    example: "PFR checks flop, then bets turn → delayed c-bet."
+  },
+  Donk: {
+    term: "Donk bet",
+    definition:
+      "A bet made into the previous street's aggressor (often on the flop) by a player who was not the aggressor.",
+    example: "PFR bets preflop, caller leads flop → flop donk."
   }
 };
 

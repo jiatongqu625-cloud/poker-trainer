@@ -19,6 +19,8 @@ export default function ScenarioForm() {
       if (line === "VS_CBET") return posRel === "IP" ? "FLOP_IP_VS_CBET" : "FLOP_OOP_VS_CBET";
       if (line === "PROBE") return "FLOP_PROBE";
       if (line === "DELAYED") return "FLOP_DELAYED_CBET";
+      // If defender but selecting betting line, treat as donk label.
+      if (role === "DEFENDER" && line === "CBET") return "FLOP_DONK";
       return posRel === "IP" ? "FLOP_IP_CBET" : "FLOP_OOP_CBET";
     }
 
