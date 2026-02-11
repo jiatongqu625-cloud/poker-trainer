@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "../../lib/prisma";
 import { getOrCreateUser } from "../../lib/session";
+import { safeJsonParse } from "@/lib/json";
 import ScenarioForm from "./ScenarioForm";
 
 export default async function ScenariosPage() {
@@ -28,10 +29,10 @@ export default async function ScenariosPage() {
             <p className="text-sm">{scenario.preflopAction}</p>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="badge">Texture {scenario.flopTexture}</span>
-              {((scenario.villainPositions as any) ?? []).map((p: string) => (
+              {safeJsonParse<string[]>((scenario as any).villainPositionsJson, []).map((p) => (
                 <span key={p} className="badge">vs {p}</span>
               ))}
-              {(scenario.opponentTags as string[]).map((tag) => (
+              {safeJsonParse<string[]>((scenario as any).opponentTagsJson, []).map((tag) => (
                 <span key={tag} className="badge">{tag}</span>
               ))}
             </div>

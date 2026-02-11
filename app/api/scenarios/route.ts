@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/session";
+import { jsonStringify } from "@/lib/json";
 
 export async function GET() {
   const user = await getOrCreateUser();
@@ -21,16 +22,16 @@ export async function POST(req: Request) {
       name: body.name ?? "Untitled",
       tableType: body.tableType ?? "6max",
       position: body.position ?? "BTN",
-      villainPositions: body.villainPositions ?? [],
+      villainPositionsJson: jsonStringify(body.villainPositions ?? [], "[]"),
       stackBb: Number(body.stackBb ?? 100),
       players: Number(body.players ?? 6),
       preflopAction: body.preflopAction ?? "SRP",
-      preflopConfig: body.preflopConfig ?? null,
+      preflopConfigJson: body.preflopConfig ? jsonStringify(body.preflopConfig) : null,
       trainingNode: body.trainingNode ?? "FLOP_CBET",
       flopTexture: body.flopTexture ?? "rainbow",
-      flopTextureWeights: body.flopTextureWeights ?? { rainbow: 1, twoTone: 1, paired: 1 },
-      boardProfileWeights: body.boardProfileWeights ?? {},
-      opponentTags: body.opponentTags ?? [],
+      flopTextureWeightsJson: jsonStringify(body.flopTextureWeights ?? { rainbow: 1, twoTone: 1, paired: 1 }),
+      boardProfileWeightsJson: jsonStringify(body.boardProfileWeights ?? {}),
+      opponentTagsJson: jsonStringify(body.opponentTags ?? [], "[]"),
       weight: Number(body.weight ?? 1)
     }
   });

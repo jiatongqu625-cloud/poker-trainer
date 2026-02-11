@@ -7,11 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum DrillResult {
-  CORRECT
-  WRONG
-  DEVIATION
-}
+// SQLite connector doesn't support enums; use String.
 
 model User {
   id          String         @id @default(cuid())
@@ -33,7 +29,7 @@ model Scenario {
   position           String
 
   /// Optional villains involved in the spot (e.g. ["BB"], ["SB","BB"]) 
-  villainPositions   Json          @default("[]")
+  villainPositionsJson String      @default("[]")
 
   stackBb            Int
   players            Int
@@ -42,18 +38,18 @@ model Scenario {
   preflopAction      String
 
   /// Structured description for type-A trees (SRP/3BP/4BP etc.)
-  preflopConfig      Json?
+  preflopConfigJson  String?
 
   /// Training node (MVP): e.g. FLOP_OOP, FLOP_IP, TURN, RIVER
-  trainingNode       String        @default("FLOP")
+  trainingNode       String        @default("FLOP_CBET")
 
   flopTexture        String
-  flopTextureWeights Json
+  flopTextureWeightsJson String    @default("{}")
 
   /// Board profile weights beyond suit texture (MVP): {"dry":0.5,"wet":0.5,"high":0.5,"low":0.5}
-  boardProfileWeights Json         @default("{}")
+  boardProfileWeightsJson String   @default("{}")
 
-  opponentTags       Json
+  opponentTagsJson   String        @default("[]")
   weight             Int           @default(1)
   parentId           String?
   userId             String?
@@ -92,13 +88,13 @@ model DrillHand {
   boardTexture         String
 
   /// Mixed strategy recommendation, e.g. {"CHECK":0.45,"BET_25":0.35,"BET_75":0.20}
-  recommendedStrategy  Json
+  recommendedStrategyJson String   @default("{}")
   recommendationReason String
 
   /// User selected one action token, e.g. CHECK/BET_25/BET_33/BET_66/BET_75
   userAction           String?
-  result               DrillResult?
-  spot                 Json
+  result               String?
+  spotJson             String       @default("{}")
   createdAt            DateTime     @default(now())
 
   session              DrillSession @relation(fields: [sessionId], references: [id])

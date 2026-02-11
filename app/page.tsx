@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "../lib/prisma";
 import { getOrCreateUser } from "../lib/session";
+import { safeJsonParse } from "@/lib/json";
 
 function pct(part: number, total: number) {
   if (!total) return "0%";

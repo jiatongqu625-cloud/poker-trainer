@@ -4,6 +4,7 @@ import { getOrCreateUser } from "@/lib/session";
 import { generateSpot, gradeAction, type ActionToken } from "@/lib/engine";
 import { allowedActionsForNode } from "@/lib/actions";
 import { restrictStrategy } from "@/lib/strategy";
+import { safeJsonParse, jsonStringify } from "@/lib/json";
 
 export async function POST(req: Request) {
   const user = await getOrCreateUser();
@@ -27,12 +28,12 @@ export async function POST(req: Request) {
     stackBb: scenario.stackBb,
     players: scenario.players,
     preflopAction: scenario.preflopAction,
-    preflopConfig: (scenario.preflopConfig as any) ?? null,
+    preflopConfig: safeJsonParse<any>((scenario as any).preflopConfigJson, null),
     trainingNode: (scenario as any).trainingNode ?? "FLOP_CBET",
     flopTexture: scenario.flopTexture,
-    flopTextureWeights: (scenario.flopTextureWeights as any) ?? {},
-    boardProfileWeights: ((scenario as any).boardProfileWeights as any) ?? {},
-    opponentTags: (scenario.opponentTags as any) ?? []
+    flopTextureWeights: safeJsonParse<Record<string, number>>((scenario as any).flopTextureWeightsJson, {}),
+    boardProfileWeights: safeJsonParse<Record<string, number>>((scenario as any).boardProfileWeightsJson, {}),
+    opponentTags: safeJsonParse<string[]>((scenario as any).opponentTagsJson, [])
   });
 
   const node = (scenario as any).trainingNode ?? "FLOP_CBET";
@@ -40,37 +41,39 @@ export async function POST(req: Request) {
   const allowedTokens = allowedActions.map((a) => a.value as ActionToken);
   const recommendedStrategy = restrictStrategy(spot.recommendedStrategy as any, allowedTokens);
 
+  const spotPayload = {
+    board: spot.board,
+    texture: spot.texture,
+    node,
+    boardProfile: spot.boardProfile,
+    spr: spot.spr,
+    explanation: spot.explanation
+  };
+
   const hand = await prisma.drillHand.create({
     data: {
       sessionId: session.id,
       scenarioId: scenario.id,
       heroHand: spot.heroHand,
       boardTexture: spot.texture,
-      recommendedStrategy: recommendedStrategy as any,
+      recommendedStrategyJson: jsonStringify(recommendedStrategy),
       recommendationReason: spot.reason,
-      spot: {
-        board: spot.board,
-        texture: spot.texture,
-        node,
-        boardProfile: spot.boardProfile,
-        spr: spot.spr,
-        explanation: spot.explanation
-      }
+      spotJson: jsonStringify(spotPayload)
     }
   });
 
   return NextResponse.json({
     id: hand.id,
     heroHand: hand.heroHand,
-    board: (hand.spot as any)?.board,
+    board: (spotPayload as any)?.board,
     texture: hand.boardTexture,
     node,
     allowedActions,
-    boardProfile: (hand.spot as any)?.boardProfile ?? [],
-    spr: (hand.spot as any)?.spr ?? null,
-    recommendedStrategy: hand.recommendedStrategy,
+    boardProfile: (spotPayload as any)?.boardProfile ?? [],
+    spr: (spotPayload as any)?.spr ?? null,
+    recommendedStrategy,
     reason: hand.recommendationReason,
-    explanation: (hand.spot as any)?.explanation ?? null
+    explanation: (spotPayload as any)?.explanation ?? null
   });
 }
 
@@ -86,31 +89,35 @@ export async function PATCH(req: Request) {
   });
   if (!hand) return NextResponse.json({ error: "Hand not found" }, { status: 404 });
 
-  const node = (hand.spot as any)?.node ?? "FLOP_CBET";
+  const spotObj = safeJsonParse<any>((hand as any).spotJson, {});
+  const node = spotObj?.node ?? "FLOP_CBET";
   const allowedActions = allowedActionsForNode(node);
   const allowedTokens = allowedActions.map((a) => a.value as ActionToken);
 
-  const result = gradeAction(userAction as ActionToken, hand.recommendedStrategy as any, allowedTokens);
+  const recStrategy = safeJsonParse<any>((hand as any).recommendedStrategyJson, {});
+  const result = gradeAction(userAction as ActionToken, recStrategy, allowedTokens);
 
   const updated = await prisma.drillHand.update({
     where: { id: hand.id },
     data: { userAction: userAction as string, result }
   });
 
-  const node2 = (updated.spot as any)?.node ?? "FLOP_CBET";
+  const spotObj2 = safeJsonParse<any>((updated as any).spotJson, {});
+  const node2 = spotObj2?.node ?? "FLOP_CBET";
   const allowedActions2 = allowedActionsForNode(node2);
+
   return NextResponse.json({
     id: updated.id,
     heroHand: updated.heroHand,
-    board: (updated.spot as any)?.board,
+    board: spotObj2?.board,
     texture: updated.boardTexture,
     node: node2,
     allowedActions: allowedActions2,
-    boardProfile: (updated.spot as any)?.boardProfile ?? [],
-    spr: (updated.spot as any)?.spr ?? null,
-    recommendedStrategy: updated.recommendedStrategy,
+    boardProfile: spotObj2?.boardProfile ?? [],
+    spr: spotObj2?.spr ?? null,
+    recommendedStrategy: recStrategy,
     reason: updated.recommendationReason,
-    explanation: (updated.spot as any)?.explanation ?? null,
+    explanation: spotObj2?.explanation ?? null,
     userAction: updated.userAction,
     result: updated.result
   });
