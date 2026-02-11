@@ -58,6 +58,12 @@ export function nodeKind(node: string): NodeKind {
   return "BETTING";
 }
 
+export function streetOfNode(node: string): "FLOP" | "TURN" | "RIVER" {
+  if (node.startsWith("TURN_")) return "TURN";
+  if (node.startsWith("RIVER_")) return "RIVER";
+  return "FLOP";
+}
+
 export function isXRNode(node: string) {
   return node.includes("XR");
 }

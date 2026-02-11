@@ -11,28 +11,28 @@ export default function ScenarioForm() {
   const [street, setStreet] = useState<"FLOP" | "TURN" | "RIVER">("FLOP");
   const [role, setRole] = useState<"AGGRESSOR" | "DEFENDER">("AGGRESSOR");
   const [posRel, setPosRel] = useState<"IP" | "OOP">("IP");
-  const [line, setLine] = useState<"CBET" | "VS_CBET" | "XR" | "PROBE" | "DELAYED">("CBET");
+  const [line, setLine] = useState<"BET" | "FACING_BET" | "XR" | "PROBE" | "DELAYED">("BET");
 
   const suggestedNode: TrainingNode = useMemo(() => {
     if (street === "FLOP") {
       if (line === "XR") return "FLOP_VS_CBET_XR";
-      if (line === "VS_CBET") return posRel === "IP" ? "FLOP_IP_VS_CBET" : "FLOP_OOP_VS_CBET";
+      if (line === "FACING_BET") return posRel === "IP" ? "FLOP_IP_VS_CBET" : "FLOP_OOP_VS_CBET";
       if (line === "PROBE") return "FLOP_PROBE";
       if (line === "DELAYED") return "FLOP_DELAYED_CBET";
       // If defender but selecting betting line, treat as donk label.
-      if (role === "DEFENDER" && line === "CBET") return "FLOP_DONK";
+      if (role === "DEFENDER" && line === "BET") return "FLOP_DONK";
       return posRel === "IP" ? "FLOP_IP_CBET" : "FLOP_OOP_CBET";
     }
 
     if (street === "TURN") {
-      if (line === "VS_CBET") return posRel === "IP" ? "TURN_IP_VS_BARREL" : "TURN_OOP_VS_BARREL";
+      if (line === "FACING_BET") return posRel === "IP" ? "TURN_IP_VS_BARREL" : "TURN_OOP_VS_BARREL";
       if (line === "PROBE") return "TURN_PROBE";
       if (line === "DELAYED") return "TURN_DELAYED_CBET";
       return "TURN_BARREL";
     }
 
     // RIVER
-    if (line === "VS_CBET") return posRel === "IP" ? "RIVER_IP_VS_TRIPLE" : "RIVER_OOP_VS_TRIPLE";
+    if (line === "FACING_BET") return posRel === "IP" ? "RIVER_IP_VS_TRIPLE" : "RIVER_OOP_VS_TRIPLE";
     if (line === "DELAYED") return "RIVER_DELAYED_BARREL";
     return "RIVER_TRIPLE_BARREL";
   }, [street, line, posRel]);
@@ -195,8 +195,8 @@ export default function ScenarioForm() {
               <option value="OOP">Out of position (OOP)</option>
             </select>
             <select value={line} onChange={(e) => setLine(e.target.value as any)}>
-              <option value="CBET">C-bet / bet</option>
-              <option value="VS_CBET">Facing bet (defense)</option>
+              <option value="BET">Betting node (c-bet/barrel)</option>
+              <option value="FACING_BET">Facing bet (defense)</option>
               <option value="XR">Check-raise node</option>
               <option value="PROBE">Probe</option>
               <option value="DELAYED">Delayed</option>
