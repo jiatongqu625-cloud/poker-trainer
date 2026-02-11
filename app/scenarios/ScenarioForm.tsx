@@ -11,12 +11,13 @@ export default function ScenarioForm() {
   const [street, setStreet] = useState<"FLOP" | "TURN" | "RIVER">("FLOP");
   const [role, setRole] = useState<"AGGRESSOR" | "DEFENDER">("AGGRESSOR");
   const [posRel, setPosRel] = useState<"IP" | "OOP">("IP");
-  const [line, setLine] = useState<"BET" | "FACING_BET" | "XR" | "PROBE" | "DELAYED">("BET");
+  const [line, setLine] = useState<"BET" | "FACING_BET" | "XR" | "PROBE" | "DELAYED" | "FACING_RAISE">("BET");
 
   const suggestedNode: TrainingNode = useMemo(() => {
     if (street === "FLOP") {
       if (line === "XR") return "FLOP_VS_CBET_XR";
       if (line === "FACING_BET") return posRel === "IP" ? "FLOP_IP_VS_CBET" : "FLOP_OOP_VS_CBET";
+      if (line === "FACING_RAISE") return role === "AGGRESSOR" ? "FLOP_CBET_FACING_RAISE" : "FLOP_VS_RAISE";
       if (line === "PROBE") return "FLOP_PROBE";
       if (line === "DELAYED") return "FLOP_DELAYED_CBET";
       // If defender but selecting betting line, treat as donk label.
@@ -26,6 +27,7 @@ export default function ScenarioForm() {
 
     if (street === "TURN") {
       if (line === "FACING_BET") return posRel === "IP" ? "TURN_IP_VS_BARREL" : "TURN_OOP_VS_BARREL";
+      if (line === "FACING_RAISE") return role === "AGGRESSOR" ? "TURN_BARREL_FACING_RAISE" : "TURN_VS_RAISE";
       if (line === "PROBE") return "TURN_PROBE";
       if (line === "DELAYED") return "TURN_DELAYED_CBET";
       return "TURN_BARREL";
@@ -33,6 +35,7 @@ export default function ScenarioForm() {
 
     // RIVER
     if (line === "FACING_BET") return posRel === "IP" ? "RIVER_IP_VS_TRIPLE" : "RIVER_OOP_VS_TRIPLE";
+    if (line === "FACING_RAISE") return role === "AGGRESSOR" ? "RIVER_BET_FACING_RAISE" : "RIVER_VS_RAISE";
     if (line === "DELAYED") return "RIVER_DELAYED_BARREL";
     return "RIVER_TRIPLE_BARREL";
   }, [street, line, posRel]);
@@ -198,6 +201,7 @@ export default function ScenarioForm() {
               <option value="BET">Betting node (c-bet/barrel)</option>
               <option value="FACING_BET">Facing bet (defense)</option>
               <option value="XR">Check-raise node</option>
+              <option value="FACING_RAISE">Facing raise (after bet)</option>
               <option value="PROBE">Probe</option>
               <option value="DELAYED">Delayed</option>
             </select>

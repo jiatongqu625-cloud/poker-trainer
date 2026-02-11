@@ -208,7 +208,13 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
 
   // NOTE: MVP heuristic strategy. Replaceable with solver-backed engine later.
   // Defense nodes: output Fold/Call/Raise mix.
-  if (node.includes("VS_CBET") || node.includes("VS_BARREL") || node.includes("VS_TRIPLE")) {
+  if (
+    node.includes("VS_CBET") ||
+    node.includes("VS_BARREL") ||
+    node.includes("VS_TRIPLE") ||
+    node.includes("VS_RAISE") ||
+    node.includes("FACING_RAISE")
+  ) {
     const isXRNode = node.includes("XR");
     const base: MixedStrategy = isXRNode
       ? { FOLD: 0.4, CALL: 0.0, RAISE_75: 0.6 }
@@ -227,12 +233,16 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
       strategy: base,
       reason: isXRNode
         ? "In check-raise nodes, your range is polarized: raise strong hands and bluffs, fold the weakest."
-        : "Versus a c-bet, defend mostly by calling and some raising; fold the weakest portion.",
+        : node.includes("RAISE")
+          ? "Facing a raise, continue with a tighter range: call some and re-raise some; fold the weakest."
+          : "Versus a bet, defend mostly by calling and some raising; fold the weakest portion.",
       bullets: [
         ...bullets,
         isXRNode
           ? "Check-raising constructs a polar range and pressures the bettor's medium-strength hands."
-          : "MDF is a baseline; raise more on textures that favor your nut advantage and on turns that shift equity."
+          : node.includes("RAISE")
+            ? "Versus a raise, MDF is less direct; focus on your value/bluff composition and how many hands can continue on future streets."
+            : "MDF is a baseline; raise more on textures that favor your nut advantage and on turns that shift equity."
       ],
       glossary: isXRNode ? [...glossary, "Polar"] : glossary,
       spr
