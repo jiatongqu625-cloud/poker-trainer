@@ -36,7 +36,7 @@ Last updated: 2026-02-11
 - Improve board generation to better reflect boardProfileWeights (wet/dry/high/low + connectedness/pairing).
 
 ## ⏭️ Next
-- Add "node presets" UI so users can describe a spot in human terms (IP/OOP, street, facing bet?) and we map it to trainingNode.
+- Add "node presets" UI so users can describe a spot in human terms (IP/OOP, street, facing bet?) and we map it to trainingNode. (Quick builder added; continue expanding presets.)
 - Add richer dashboard analytics (mistakes by node/texture/SPR bucket).
 - Add scenario editing (update/delete) and scenario cloning.
 - Add opponent influence into recommendations (adapt strategy based on opponent stats).
