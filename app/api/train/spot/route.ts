@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateUser } from "@/lib/session";
+import { getUserOrNull } from "@/lib/session";
 
 // "Drill this spot more": create a child scenario with increased weight.
 export async function POST(req: Request) {
-  const user = await getOrCreateUser();
+  const user = await getUserOrNull();
+  if (!user) return NextResponse.json({ error: "Session not initialized" }, { status: 401 });
   const { handId } = await req.json();
 
   const hand = await prisma.drillHand.findFirst({

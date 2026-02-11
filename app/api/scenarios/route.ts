@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateUser } from "@/lib/session";
+import { getUserOrNull } from "@/lib/session";
 import { jsonStringify } from "@/lib/json";
 
 export async function GET() {
-  const user = await getOrCreateUser();
+  const user = await getUserOrNull();
+  if (!user) return NextResponse.json({ error: "Session not initialized" }, { status: 401 });
   const scenarios = await prisma.scenario.findMany({
     where: { OR: [{ userId: user.id }, { userId: null }] },
     orderBy: { updatedAt: "desc" }
@@ -13,7 +14,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const user = await getOrCreateUser();
+  const user = await getUserOrNull();
+  if (!user) return NextResponse.json({ error: "Session not initialized" }, { status: 401 });
   const body = await req.json();
 
   const scenario = await prisma.scenario.create({

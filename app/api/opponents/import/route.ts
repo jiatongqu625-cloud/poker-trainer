@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateUser } from "@/lib/session";
+import { getUserOrNull } from "@/lib/session";
 import { parseHandHistory } from "@/lib/handHistory";
 
 export async function POST(req: Request) {
-  const user = await getOrCreateUser();
+  const user = await getUserOrNull();
+  if (!user) return NextResponse.json({ error: "Session not initialized" }, { status: 401 });
   const body = await req.json();
   const opponentId = body.opponentId as string;
   const rawText = (body.rawText as string) ?? "";

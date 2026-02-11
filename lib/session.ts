@@ -1,25 +1,15 @@
 import { cookies } from "next/headers";
 import { prisma } from "./prisma";
-import crypto from "crypto";
 
 const SESSION_COOKIE = "pt_session";
 
-export async function getOrCreateUser() {
-  const cookieStore = cookies();
-  const existing = cookieStore.get(SESSION_COOKIE)?.value;
+// NOTE: Server Components cannot set cookies in Next.js 15.
+// Cookie creation/setting happens via /api/session.
+export async function getUserOrNull() {
+  const cookieStore = await cookies();
+  const sessionId = cookieStore.get(SESSION_COOKIE)?.value;
+  if (!sessionId) return null;
 
-  if (existing) {
-    const user = await prisma.user.findUnique({ where: { sessionId: existing } });
-    if (user) return user;
-  }
-
-  const sessionId = crypto.randomUUID();
-  const user = await prisma.user.create({ data: { sessionId } });
-  cookieStore.set(SESSION_COOKIE, sessionId, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 365
-  });
+  const user = await prisma.user.findUnique({ where: { sessionId } });
   return user;
 }

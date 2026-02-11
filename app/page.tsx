@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "../lib/prisma";
-import { getOrCreateUser } from "../lib/session";
+import { getUserOrNull } from "../lib/session";
 import { safeJsonParse } from "@/lib/json";
 
 function pct(part: number, total: number) {
@@ -9,7 +9,15 @@ function pct(part: number, total: number) {
 }
 
 export default async function DashboardPage() {
-  const user = await getOrCreateUser();
+  const user = await getUserOrNull();
+  if (!user) {
+    return (
+      <main className="card">
+        <p className="text-sm text-white/70">Initializing session…</p>
+        <p className="text-xs text-white/50 pt-2">If this message persists, refresh the page.</p>
+      </main>
+    );
+  }
 
   const recentHands = await prisma.drillHand.findMany({
     where: { session: { userId: user.id } },

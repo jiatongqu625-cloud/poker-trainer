@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getOrCreateUser } from "@/lib/session";
+import { getUserOrNull } from "@/lib/session";
 import { generateSpot, gradeAction, type ActionToken } from "@/lib/engine";
 import { allowedActionsForNode } from "@/lib/actions";
 import { restrictStrategy } from "@/lib/strategy";
 import { safeJsonParse, jsonStringify } from "@/lib/json";
 
 export async function POST(req: Request) {
-  const user = await getOrCreateUser();
+  const user = await getUserOrNull();
+  if (!user) return NextResponse.json({ error: "Session not initialized" }, { status: 401 });
   const { scenarioId } = await req.json();
 
   const scenario = await prisma.scenario.findFirst({
@@ -78,7 +79,8 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const user = await getOrCreateUser();
+  const user = await getUserOrNull();
+  if (!user) return NextResponse.json({ error: "Session not initialized" }, { status: 401 });
   const { handId, userAction } = await req.json();
 
   const hand = await prisma.drillHand.findFirst({

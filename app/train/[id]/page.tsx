@@ -1,9 +1,17 @@
 import { prisma } from "../../../lib/prisma";
-import { getOrCreateUser } from "../../../lib/session";
+import { getUserOrNull } from "../../../lib/session";
 import TrainPanel from "./TrainPanel";
 
 export default async function TrainPage({ params }: { params: { id: string } }) {
-  const user = await getOrCreateUser();
+  const user = await getUserOrNull();
+  if (!user) {
+    return (
+      <main className="card">
+        <p className="text-sm text-white/70">Initializing session…</p>
+        <p className="text-xs text-white/50 pt-2">Refresh the page if it does not proceed.</p>
+      </main>
+    );
+  }
   const scenario = await prisma.scenario.findFirst({
     where: {
       id: params.id,
