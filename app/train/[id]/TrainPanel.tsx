@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { GLOSSARY } from "@/lib/glossary";
 
 type MixedStrategy = Record<string, number>;
+
+type GlossaryEntry = { term: string; definition: string; example?: string };
 
 type DrillHand = {
   id: string;
@@ -35,6 +38,14 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
   const [hand, setHand] = useState<DrillHand | null>(null);
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState<(typeof ACTIONS)[number]["value"]>(ACTIONS[0].value);
+
+  const glossaryEntries: GlossaryEntry[] = useMemo(() => {
+    const keys = (hand?.explanation?.glossary ?? []).map((k) => String(k));
+    const unique = Array.from(new Set(keys));
+    return unique
+      .map((k) => (GLOSSARY as any)[k])
+      .filter(Boolean);
+  }, [hand?.explanation?.glossary]);
 
   async function loadHand() {
     setLoading(true);
@@ -139,10 +150,25 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
                   ))}
                 </ul>
                 {hand.explanation.glossary?.length ? (
-                  <p className="text-xs text-white/50 pt-2">
-                    Terms: {hand.explanation.glossary.join(", ")} (definitions coming next)
-                  </p>
+                  <p className="text-xs text-white/50 pt-2">Terms: {hand.explanation.glossary.join(", ")}</p>
                 ) : null}
+              </details>
+            ) : null}
+
+            {glossaryEntries.length ? (
+              <details className="pt-2">
+                <summary className="cursor-pointer text-sm text-white/70">Glossary</summary>
+                <div className="grid md:grid-cols-2 gap-3 pt-3">
+                  {glossaryEntries.map((entry) => (
+                    <div key={entry.term} className="card">
+                      <div className="text-sm font-semibold">{entry.term}</div>
+                      <div className="text-sm text-white/70 pt-1">{entry.definition}</div>
+                      {entry.example ? (
+                        <div className="text-xs text-white/50 pt-2">Example: {entry.example}</div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
               </details>
             ) : null}
           </div>
