@@ -205,7 +205,10 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
   // NOTE: MVP heuristic strategy. Replaceable with solver-backed engine later.
   // Defense nodes: output Fold/Call/Raise mix.
   if (node.includes("VS_CBET")) {
-    const base: MixedStrategy = { FOLD: 0.25, CALL: 0.6, RAISE_75: 0.15 };
+    const isXRNode = node.includes("XR");
+    const base: MixedStrategy = isXRNode
+      ? { FOLD: 0.4, CALL: 0.0, RAISE_75: 0.6 }
+      : { FOLD: 0.25, CALL: 0.6, RAISE_75: 0.15 };
     if (texture === "twoTone" || texture === "two-tone") {
       base.FOLD = 0.22;
       base.CALL = 0.58;
@@ -218,9 +221,16 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
     }
     return {
       strategy: base,
-      reason: "Versus a c-bet, defend mostly by calling and some raising; fold the weakest portion.",
-      bullets: [...bullets, "MDF is a baseline; raise more on textures that favor your nut advantage and on turns that shift equity."],
-      glossary,
+      reason: isXRNode
+        ? "In check-raise nodes, your range is polarized: raise strong hands and bluffs, fold the weakest."
+        : "Versus a c-bet, defend mostly by calling and some raising; fold the weakest portion.",
+      bullets: [
+        ...bullets,
+        isXRNode
+          ? "Check-raising constructs a polar range and pressures the bettor's medium-strength hands."
+          : "MDF is a baseline; raise more on textures that favor your nut advantage and on turns that shift equity."
+      ],
+      glossary: isXRNode ? [...glossary, "Polar"] : glossary,
       spr
     };
   }
@@ -251,6 +261,17 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
       reason: "4-bet pots are typically low SPR and range-constrained; small bets are common.",
       bullets: [...bullets, "Low SPR spots often support more betting with strong overpairs/top pairs."],
       glossary: [...glossary, "CBet"],
+      spr
+    };
+  }
+
+  // Probe / delayed nodes (MVP): prefer bigger bets less often; more checks.
+  if (node.includes("PROBE") || node.includes("DELAYED")) {
+    return {
+      strategy: { CHECK: 0.5, BET_33: 0.35, BET_75: 0.15 },
+      reason: "Probe/delayed nodes often use smaller sizings and higher checking to keep ranges protected.",
+      bullets: [...bullets, "When the previous street checked through, ranges are wider; prefer small bets and protect checks."],
+      glossary: [...glossary, "RangeBet"],
       spr
     };
   }
