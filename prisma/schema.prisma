@@ -44,8 +44,15 @@ model Scenario {
   /// Structured description for type-A trees (SRP/3BP/4BP etc.)
   preflopConfig      Json?
 
+  /// Training node (MVP): e.g. FLOP_OOP, FLOP_IP, TURN, RIVER
+  trainingNode       String        @default("FLOP")
+
   flopTexture        String
   flopTextureWeights Json
+
+  /// Board profile weights beyond suit texture (MVP): {"dry":0.5,"wet":0.5,"high":0.5,"low":0.5}
+  boardProfileWeights Json         @default("{}")
+
   opponentTags       Json
   weight             Int           @default(1)
   parentId           String?

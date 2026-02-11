@@ -25,8 +25,11 @@ export async function POST(req: Request) {
     stackBb: scenario.stackBb,
     players: scenario.players,
     preflopAction: scenario.preflopAction,
+    preflopConfig: (scenario.preflopConfig as any) ?? null,
+    trainingNode: (scenario as any).trainingNode ?? "FLOP",
     flopTexture: scenario.flopTexture,
     flopTextureWeights: (scenario.flopTextureWeights as any) ?? {},
+    boardProfileWeights: ((scenario as any).boardProfileWeights as any) ?? {},
     opponentTags: (scenario.opponentTags as any) ?? []
   });
 
@@ -40,7 +43,10 @@ export async function POST(req: Request) {
       recommendationReason: spot.reason,
       spot: {
         board: spot.board,
-        texture: spot.texture
+        texture: spot.texture,
+        boardProfile: spot.boardProfile,
+        spr: spot.spr,
+        explanation: spot.explanation
       }
     }
   });
@@ -50,8 +56,11 @@ export async function POST(req: Request) {
     heroHand: hand.heroHand,
     board: (hand.spot as any)?.board,
     texture: hand.boardTexture,
+    boardProfile: (hand.spot as any)?.boardProfile ?? [],
+    spr: (hand.spot as any)?.spr ?? null,
     recommendedStrategy: hand.recommendedStrategy,
-    reason: hand.recommendationReason
+    reason: hand.recommendationReason,
+    explanation: (hand.spot as any)?.explanation ?? null
   });
 }
 
@@ -79,8 +88,11 @@ export async function PATCH(req: Request) {
     heroHand: updated.heroHand,
     board: (updated.spot as any)?.board,
     texture: updated.boardTexture,
+    boardProfile: (updated.spot as any)?.boardProfile ?? [],
+    spr: (updated.spot as any)?.spr ?? null,
     recommendedStrategy: updated.recommendedStrategy,
     reason: updated.recommendationReason,
+    explanation: (updated.spot as any)?.explanation ?? null,
     userAction: updated.userAction,
     result: updated.result
   });

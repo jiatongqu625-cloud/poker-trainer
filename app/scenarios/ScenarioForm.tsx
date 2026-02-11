@@ -25,15 +25,25 @@ export default function ScenarioForm() {
     const aggressor = String(formData.get("aggressor") || heroPos);
     const callers = Number(formData.get("callers") || 1);
 
+    const trainingNode = String(formData.get("trainingNode") || "FLOP");
+
     const preflopConfig = {
       potType,
       aggressor,
       heroPos,
       villains,
-      callers
+      callers,
+      trainingNode
     };
 
     const preflopAction = `${potType} | Aggressor ${aggressor} | Hero ${heroPos} | Callers ${callers} | Vs ${villains.join(",") || "(unspecified)"}`;
+
+    const boardProfileWeights = {
+      dry: Number(formData.get("dry") || 0),
+      wet: Number(formData.get("wet") || 0),
+      high: Number(formData.get("high") || 0),
+      low: Number(formData.get("low") || 0)
+    };
 
     const payload = {
       name: formData.get("name"),
@@ -44,6 +54,7 @@ export default function ScenarioForm() {
       players,
       preflopAction,
       preflopConfig,
+      trainingNode,
       flopTexture: formData.get("flopTexture"),
       opponentTags: String(formData.get("opponentTags") || "")
         .split(",")
@@ -53,7 +64,8 @@ export default function ScenarioForm() {
         twoTone: Number(formData.get("twoTone") || 0),
         rainbow: Number(formData.get("rainbow") || 0),
         paired: Number(formData.get("paired") || 0)
-      }
+      },
+      boardProfileWeights
     };
 
     const res = await fetch("/api/scenarios", {
@@ -128,6 +140,12 @@ export default function ScenarioForm() {
         <input name="aggressor" placeholder="Preflop aggressor position (e.g. BTN)" />
         <input name="callers" type="number" min="0" defaultValue={1} placeholder="# of callers" />
 
+        <select name="trainingNode" defaultValue="FLOP">
+          <option value="FLOP">Flop decision</option>
+          <option value="TURN">Turn decision</option>
+          <option value="RIVER">River decision</option>
+        </select>
+
         <select name="flopTexture" defaultValue="rainbow">
           <option value="rainbow">Flop texture: rainbow</option>
           <option value="two-tone">Flop texture: two-tone</option>
@@ -141,6 +159,13 @@ export default function ScenarioForm() {
         <input name="twoTone" type="number" step="0.05" defaultValue={0.4} placeholder="two-tone weight" />
         <input name="rainbow" type="number" step="0.05" defaultValue={0.4} placeholder="rainbow weight" />
         <input name="paired" type="number" step="0.05" defaultValue={0.2} placeholder="paired weight" />
+      </div>
+
+      <div className="grid md:grid-cols-4 gap-3">
+        <input name="dry" type="number" step="0.05" defaultValue={0.5} placeholder="dry board weight" />
+        <input name="wet" type="number" step="0.05" defaultValue={0.5} placeholder="wet board weight" />
+        <input name="high" type="number" step="0.05" defaultValue={0.5} placeholder="high board weight" />
+        <input name="low" type="number" step="0.05" defaultValue={0.5} placeholder="low board weight" />
       </div>
 
       <button type="submit" disabled={loading}>

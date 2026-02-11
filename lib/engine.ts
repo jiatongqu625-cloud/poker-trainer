@@ -4,8 +4,11 @@ export type SpotInput = {
   stackBb: number;
   players: number;
   preflopAction: string;
+  preflopConfig?: any;
+  trainingNode?: string;
   flopTexture: string;
   flopTextureWeights: Record<string, number>;
+  boardProfileWeights?: Record<string, number>;
   opponentTags: string[];
 };
 
@@ -17,8 +20,14 @@ export type SpotOutput = {
   heroHand: string;
   board: string;
   texture: string;
+  boardProfile: string[];
+  spr: number;
   recommendedStrategy: MixedStrategy;
   reason: string;
+  explanation: {
+    bullets: string[];
+    glossary: string[];
+  };
 };
 
 const HERO_HANDS = [
@@ -95,42 +104,82 @@ function buildBoard(texture: string) {
   return cards.join(" ");
 }
 
-function recommendStrategy(input: SpotInput, texture: string): { strategy: MixedStrategy; reason: string } {
+function estimatePotAtFlopBb(potType: string, callers: number) {
+  // Very rough MVP estimates (bb). Intended for explanation, not precision.
+  const c = Math.max(0, Number(callers ?? 0));
+  if (potType === "4BP") return 40 + c * 12;
+  if (potType === "3BP") return 18 + c * 6;
+  return 6.5 + c * 2.5; // SRP baseline
+}
+
+function safeNumber(n: any, fallback: number) {
+  const x = Number(n);
+  return Number.isFinite(x) ? x : fallback;
+}
+
+function recommendStrategy(input: SpotInput, texture: string): { strategy: MixedStrategy; reason: string; bullets: string[]; glossary: string[]; spr: number } {
   const base = input.preflopAction.toLowerCase();
   const tags = input.opponentTags.map((t) => t.toLowerCase());
+
+  const potType = String(input.preflopConfig?.potType ?? "SRP");
+  const callers = safeNumber(input.preflopConfig?.callers, 1);
+  const potAtFlop = estimatePotAtFlopBb(potType, callers);
+  const spr = input.stackBb / Math.max(1, potAtFlop);
+
+  const bullets = [
+    `Pot type: ${potType}. Estimated pot at flop: ~${potAtFlop.toFixed(1)}bb.`,
+    `Effective stack: ${input.stackBb}bb → SPR ≈ ${spr.toFixed(1)}.`
+  ];
+
+  const glossary = ["SPR", potType];
 
   // NOTE: MVP heuristic strategy. Replaceable with solver-backed engine later.
   if (texture === "paired") {
     return {
       strategy: { CHECK: 0.35, BET_25: 0.55, BET_75: 0.1, BET_33: 0, BET_66: 0 },
-      reason: "Paired boards often reduce nut advantage. Mixed small c-bets keep range wide."
+      reason: "Paired boards often reduce nut advantage. Mixed small c-bets keep ranges wide.",
+      bullets: [...bullets, "Paired textures often reduce strong hand density, so small bets + checks are common."],
+      glossary: [...glossary, "CBet", "RangeBet"],
+      spr
     };
   }
 
   if (texture === "twoTone" || texture === "two-tone") {
     return {
       strategy: { CHECK: 0.5, BET_33: 0.35, BET_75: 0.15, BET_25: 0, BET_66: 0 },
-      reason: "Flush draws increase checking. Mix checks with small and occasional bigger bets."
+      reason: "Two-tone boards add flush draws: increase checking and keep some big bets.",
+      bullets: [...bullets, "Flush draws increase the value of checking and protect your checking range."],
+      glossary: [...glossary, "CBet"],
+      spr
     };
   }
 
-  if (base.includes("4bet")) {
+  if (potType === "4BP" || base.includes("4bet")) {
     return {
       strategy: { CHECK: 0.25, BET_25: 0.6, BET_75: 0.15, BET_33: 0, BET_66: 0 },
-      reason: "4-bet pots favor the aggressor. Small bets apply pressure while keeping bluffs." 
+      reason: "4-bet pots are typically low SPR and range-constrained; small bets are common.",
+      bullets: [...bullets, "Low SPR spots often support more betting with strong overpairs/top pairs."],
+      glossary: [...glossary, "CBet"],
+      spr
     };
   }
 
   if (tags.includes("sticky")) {
     return {
       strategy: { CHECK: 0.25, BET_66: 0.45, BET_75: 0.3, BET_25: 0, BET_33: 0 },
-      reason: "Versus sticky opponents, shift toward larger polarized betting for value/bluffs."
+      reason: "Versus sticky opponents, shift toward larger polarized betting.",
+      bullets: [...bullets, "If villain overcalls, larger sizings extract more value and pressure draws."],
+      glossary: [...glossary, "Polar"],
+      spr
     };
   }
 
   return {
     strategy: { CHECK: 0.3, BET_33: 0.55, BET_75: 0.15, BET_25: 0, BET_66: 0 },
-    reason: "Default heuristic: mostly small c-bet with some checks and some bigger bets."
+    reason: "Default heuristic: mostly small c-bet with some checks and occasional big bets.",
+    bullets: [...bullets, "On neutral textures, small c-bets are a common baseline in many game trees."],
+    glossary,
+    spr
   };
 }
 
@@ -139,6 +188,13 @@ export function generateSpot(input: SpotInput): SpotOutput {
     input.flopTextureWeights,
     input.flopTexture || "rainbow"
   );
+
+  // Extra board labels (MVP). Not used for generation yet, but used for training explanations.
+  const boardProfileWeights = input.boardProfileWeights ?? {};
+  const dryness = pickWeighted({ dry: boardProfileWeights.dry ?? 1, wet: boardProfileWeights.wet ?? 1 }, "dry");
+  const highness = pickWeighted({ high: boardProfileWeights.high ?? 1, low: boardProfileWeights.low ?? 1 }, "high");
+  const boardProfile = [dryness, highness];
+
   const heroHand = randomHand();
   const board = buildBoard(texture);
   const recommendation = recommendStrategy(input, texture);
@@ -147,8 +203,14 @@ export function generateSpot(input: SpotInput): SpotOutput {
     heroHand,
     board,
     texture,
+    boardProfile,
+    spr: recommendation.spr,
     recommendedStrategy: recommendation.strategy,
-    reason: recommendation.reason
+    reason: recommendation.reason,
+    explanation: {
+      bullets: recommendation.bullets,
+      glossary: recommendation.glossary
+    }
   };
 }
 

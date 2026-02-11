@@ -9,8 +9,11 @@ type DrillHand = {
   heroHand: string;
   board: string;
   texture: string;
+  boardProfile?: string[];
+  spr?: number | null;
   recommendedStrategy: MixedStrategy;
   reason: string;
+  explanation?: { bullets: string[]; glossary: string[] } | null;
   userAction?: string | null;
   result?: string | null;
 };
@@ -86,7 +89,7 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
       {!hand && <p className="text-sm text-white/60">Generating a training hand...</p>}
       {hand && (
         <div className="space-y-3">
-          <div className="grid md:grid-cols-3 gap-3">
+          <div className="grid md:grid-cols-4 gap-3">
             <div className="card">
               <p className="text-xs text-white/50">Hero hand</p>
               <p className="text-xl font-semibold">{hand.heroHand}</p>
@@ -99,7 +102,18 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
               <p className="text-xs text-white/50">Texture</p>
               <p className="text-xl font-semibold">{hand.texture}</p>
             </div>
+            <div className="card">
+              <p className="text-xs text-white/50">SPR</p>
+              <p className="text-xl font-semibold">{hand.spr ? hand.spr.toFixed(1) : "—"}</p>
+              <p className="text-xs text-white/50">(approx)</p>
+            </div>
           </div>
+
+          {hand.boardProfile?.length ? (
+            <div className="text-xs text-white/60">
+              Board profile: {hand.boardProfile.join(", ")}
+            </div>
+          ) : null}
 
           <div className="card space-y-2">
             <p className="text-sm text-white/50">Recommended strategy (mix)</p>
@@ -115,6 +129,22 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
                 ))}
             </div>
             <p className="text-sm text-white/60">{hand.reason}</p>
+
+            {hand.explanation?.bullets?.length ? (
+              <details className="pt-2">
+                <summary className="cursor-pointer text-sm text-white/70">Why this strategy?</summary>
+                <ul className="list-disc pl-5 text-sm text-white/70 space-y-1 pt-2">
+                  {hand.explanation.bullets.map((b, idx) => (
+                    <li key={idx}>{b}</li>
+                  ))}
+                </ul>
+                {hand.explanation.glossary?.length ? (
+                  <p className="text-xs text-white/50 pt-2">
+                    Terms: {hand.explanation.glossary.join(", ")} (definitions coming next)
+                  </p>
+                ) : null}
+              </details>
+            ) : null}
           </div>
 
           <div className="card space-y-2">
