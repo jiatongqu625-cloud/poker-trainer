@@ -31,7 +31,7 @@ Last updated: 2026-02-11
   - Training UI switches action sets based on node kind (betting/defense/XR)
 
 ## 🚧 In progress
-- Expand node taxonomy to cover common SRP/3BP/4BP postflop branches in a consistent naming scheme (donk/probe/delayed/xr/etc).
+- Expand node taxonomy to cover common SRP/3BP/4BP postflop branches in a consistent naming scheme (donk/probe/delayed/xr/facing-raise/etc).
 - Make engine output action-sets strictly consistent with node type (betting nodes vs defense nodes vs XR nodes). (Server returns allowedActions; strategy is now restricted to allowed actions.)
 - Improve board generation to better reflect boardProfileWeights (wet/dry/high/low + connectedness/pairing).
 
