@@ -25,10 +25,25 @@ model User {
 model Scenario {
   id                 String        @id @default(cuid())
   name               String
+
+  /// "6max" | "9max" (MVP as string)
+  tableType          String        @default("6max")
+
+  /// Hero position (e.g. BTN/CO/HJ/UTG/SB/BB)
   position           String
+
+  /// Optional villains involved in the spot (e.g. ["BB"], ["SB","BB"]) 
+  villainPositions   Json          @default("[]")
+
   stackBb            Int
   players            Int
+
+  /// Human-readable summary. Keep for backward compatibility with heuristics.
   preflopAction      String
+
+  /// Structured description for type-A trees (SRP/3BP/4BP etc.)
+  preflopConfig      Json?
+
   flopTexture        String
   flopTextureWeights Json
   opponentTags       Json

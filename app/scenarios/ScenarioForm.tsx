@@ -12,12 +12,38 @@ export default function ScenarioForm() {
     setMessage(null);
 
     const formData = new FormData(event.currentTarget);
+    const tableType = String(formData.get("tableType") || "6max");
+    const players = tableType === "9max" ? 9 : 6;
+
+    const heroPos = String(formData.get("position") || "BTN");
+    const villains = String(formData.get("villainPositions") || "")
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const potType = String(formData.get("potType") || "SRP");
+    const aggressor = String(formData.get("aggressor") || heroPos);
+    const callers = Number(formData.get("callers") || 1);
+
+    const preflopConfig = {
+      potType,
+      aggressor,
+      heroPos,
+      villains,
+      callers
+    };
+
+    const preflopAction = `${potType} | Aggressor ${aggressor} | Hero ${heroPos} | Callers ${callers} | Vs ${villains.join(",") || "(unspecified)"}`;
+
     const payload = {
       name: formData.get("name"),
-      position: formData.get("position"),
+      tableType,
+      position: heroPos,
+      villainPositions: villains,
       stackBb: Number(formData.get("stackBb")),
-      players: Number(formData.get("players")),
-      preflopAction: formData.get("preflopAction"),
+      players,
+      preflopAction,
+      preflopConfig,
       flopTexture: formData.get("flopTexture"),
       opponentTags: String(formData.get("opponentTags") || "")
         .split(",")
@@ -37,40 +63,93 @@ export default function ScenarioForm() {
     });
 
     if (res.ok) {
-      setMessage("已创建场景，刷新页面查看。");
+      setMessage("Scenario created. Refresh to see it in the list.");
       event.currentTarget.reset();
     } else {
-      setMessage("创建失败，请检查输入。");
+      setMessage("Failed to create scenario. Check your inputs.");
     }
 
     setLoading(false);
   }
 
+  const POSITIONS_6MAX = ["UTG", "HJ", "CO", "BTN", "SB", "BB"];
+  const POSITIONS_9MAX = ["UTG", "UTG1", "UTG2", "LJ", "HJ", "CO", "BTN", "SB", "BB"];
+
   return (
     <form onSubmit={handleSubmit} className="card space-y-3">
-      <h2 className="text-lg font-semibold">创建训练场景</h2>
+      <h2 className="text-lg font-semibold">Create scenario (A/B)</h2>
       {message && <p className="text-sm text-white/70">{message}</p>}
+
       <div className="grid md:grid-cols-2 gap-3">
-        <input name="name" placeholder="场景名称" required />
-        <input name="position" placeholder="位置 (BTN/CO/SB...)" required />
-        <input name="stackBb" type="number" min="10" defaultValue={100} placeholder="有效筹码 (BB)" required />
-        <input name="players" type="number" min="2" defaultValue={6} placeholder="桌人数" required />
-        <input name="preflopAction" placeholder="前序动作描述" required />
-        <select name="flopTexture" defaultValue="rainbow">
-          <option value="rainbow">翻牌纹理: 彩虹</option>
-          <option value="two-tone">翻牌纹理: 两张同花</option>
-          <option value="paired">翻牌纹理: 成对</option>
+        <input name="name" placeholder="Scenario name" required />
+
+        <select name="tableType" defaultValue="6max">
+          <option value="6max">6-max</option>
+          <option value="9max">9-max</option>
         </select>
-        <input name="opponentTags" placeholder="对手标签 (逗号分隔)" />
+
+        <select name="position" defaultValue="BTN">
+          <optgroup label="6-max">
+            {POSITIONS_6MAX.map((p) => (
+              <option key={`6-${p}`} value={p}>
+                {p}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="9-max">
+            {POSITIONS_9MAX.map((p) => (
+              <option key={`9-${p}`} value={p}>
+                {p}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+
+        <input
+          name="villainPositions"
+          placeholder="Villain positions (comma-separated, e.g. BB,SB)"
+        />
+
+        <input
+          name="stackBb"
+          type="number"
+          min="10"
+          defaultValue={100}
+          placeholder="Effective stack (BB)"
+          required
+        />
+
+        <select name="potType" defaultValue="SRP">
+          <option value="SRP">SRP (single-raised pot)</option>
+          <option value="3BP">3-bet pot</option>
+          <option value="4BP">4-bet pot</option>
+        </select>
+
+        <input name="aggressor" placeholder="Preflop aggressor position (e.g. BTN)" />
+        <input name="callers" type="number" min="0" defaultValue={1} placeholder="# of callers" />
+
+        <select name="flopTexture" defaultValue="rainbow">
+          <option value="rainbow">Flop texture: rainbow</option>
+          <option value="two-tone">Flop texture: two-tone</option>
+          <option value="paired">Flop texture: paired</option>
+        </select>
+
+        <input name="opponentTags" placeholder="Opponent tags (comma-separated)" />
       </div>
+
       <div className="grid md:grid-cols-3 gap-3">
-        <input name="twoTone" type="number" step="0.05" defaultValue={0.4} placeholder="两张同花权重" />
-        <input name="rainbow" type="number" step="0.05" defaultValue={0.4} placeholder="彩虹权重" />
-        <input name="paired" type="number" step="0.05" defaultValue={0.2} placeholder="成对权重" />
+        <input name="twoTone" type="number" step="0.05" defaultValue={0.4} placeholder="two-tone weight" />
+        <input name="rainbow" type="number" step="0.05" defaultValue={0.4} placeholder="rainbow weight" />
+        <input name="paired" type="number" step="0.05" defaultValue={0.2} placeholder="paired weight" />
       </div>
+
       <button type="submit" disabled={loading}>
-        {loading ? "创建中..." : "创建场景"}
+        {loading ? "Creating..." : "Create scenario"}
       </button>
+
+      <p className="text-xs text-white/50">
+        Notes: This editor stores both a human-readable summary and a structured preflopConfig (for type-A trees).
+      </p>
     </form>
   );
 }
