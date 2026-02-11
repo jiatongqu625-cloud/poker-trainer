@@ -52,7 +52,8 @@ export default function ScenarioForm() {
     setLoading(true);
     setMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const formEl = event.currentTarget;
+    const formData = new FormData(formEl);
     const tableType = String(formData.get("tableType") || "6max");
     const players = tableType === "9max" ? 9 : 6;
 
@@ -117,7 +118,7 @@ export default function ScenarioForm() {
 
     if (res.ok) {
       setMessage("Scenario created. Refresh to see it in the list.");
-      event.currentTarget.reset();
+      formEl.reset();
     } else {
       setMessage("Failed to create scenario. Check your inputs.");
     }
