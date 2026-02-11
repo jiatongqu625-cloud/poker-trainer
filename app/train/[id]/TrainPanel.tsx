@@ -12,6 +12,7 @@ type DrillHand = {
   heroHand: string;
   board: string;
   texture: string;
+  node?: string;
   boardProfile?: string[];
   spr?: number | null;
   recommendedStrategy: MixedStrategy;
@@ -26,7 +27,7 @@ type Scenario = {
   name: string;
 };
 
-const ACTIONS = [
+const ACTIONS_CBET = [
   { label: "Check", value: "CHECK" },
   { label: "Bet 25% pot", value: "BET_25" },
   { label: "Bet 33% pot", value: "BET_33" },
@@ -34,10 +35,18 @@ const ACTIONS = [
   { label: "Bet 75% pot", value: "BET_75" }
 ] as const;
 
+const ACTIONS_VS_CBET = [
+  { label: "Fold", value: "FOLD" },
+  { label: "Call", value: "CALL" },
+  { label: "Raise 33% pot", value: "RAISE_33" },
+  { label: "Raise 75% pot", value: "RAISE_75" },
+  { label: "Jam", value: "JAM" }
+] as const;
+
 export default function TrainPanel({ scenario }: { scenario: Scenario }) {
   const [hand, setHand] = useState<DrillHand | null>(null);
   const [loading, setLoading] = useState(false);
-  const [action, setAction] = useState<(typeof ACTIONS)[number]["value"]>(ACTIONS[0].value);
+  const [action, setAction] = useState<string>(ACTIONS_CBET[0].value);
 
   const glossaryEntries: GlossaryEntry[] = useMemo(() => {
     const keys = (hand?.explanation?.glossary ?? []).map((k) => String(k));
@@ -56,7 +65,7 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
     });
     const data = await res.json();
     setHand(data);
-    setAction(ACTIONS[0].value);
+    setAction(((data?.node ?? "").includes("VS_CBET") ? ACTIONS_VS_CBET : ACTIONS_CBET)[0].value);
     setLoading(false);
   }
 
@@ -100,6 +109,7 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
       {!hand && <p className="text-sm text-white/60">Generating a training hand...</p>}
       {hand && (
         <div className="space-y-3">
+          <div className="text-xs text-white/60">Node: {hand.node ?? "—"}</div>
           <div className="grid md:grid-cols-4 gap-3">
             <div className="card">
               <p className="text-xs text-white/50">Hero hand</p>
@@ -176,8 +186,8 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
           <div className="card space-y-2">
             <p className="text-sm text-white/50">Your action</p>
             <div className="flex flex-wrap gap-2">
-              <select value={action} onChange={(event) => setAction(event.target.value as any)}>
-                {ACTIONS.map((item) => (
+              <select value={action} onChange={(event) => setAction(event.target.value)}>
+                {((hand?.node ?? "").includes("VS_CBET") ? ACTIONS_VS_CBET : ACTIONS_CBET).map((item) => (
                   <option key={item.value} value={item.value}>
                     {item.label}
                   </option>

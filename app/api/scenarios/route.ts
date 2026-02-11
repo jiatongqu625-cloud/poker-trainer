@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       players: Number(body.players ?? 6),
       preflopAction: body.preflopAction ?? "SRP",
       preflopConfig: body.preflopConfig ?? null,
-      trainingNode: body.trainingNode ?? "FLOP",
+      trainingNode: body.trainingNode ?? "FLOP_CBET",
       flopTexture: body.flopTexture ?? "rainbow",
       flopTextureWeights: body.flopTextureWeights ?? { rainbow: 1, twoTone: 1, paired: 1 },
       boardProfileWeights: body.boardProfileWeights ?? {},

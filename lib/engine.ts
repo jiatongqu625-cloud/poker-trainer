@@ -12,9 +12,19 @@ export type SpotInput = {
   opponentTags: string[];
 };
 
-export type ActionToken = "CHECK" | "BET_25" | "BET_33" | "BET_66" | "BET_75";
+export type ActionToken =
+  | "FOLD"
+  | "CHECK"
+  | "CALL"
+  | "BET_25"
+  | "BET_33"
+  | "BET_66"
+  | "BET_75"
+  | "RAISE_33"
+  | "RAISE_75"
+  | "JAM";
 
-export type MixedStrategy = Record<ActionToken, number>;
+export type MixedStrategy = Partial<Record<ActionToken, number>>;
 
 export type SpotOutput = {
   heroHand: string;
@@ -184,18 +194,40 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
 
   // Node-aware tweaks (MVP):
   if (node.includes("VS_CBET")) {
-    bullets.push("This node is about defending vs a continuation bet; expect more calling/raising and fewer pure bets.");
-    glossary.push("CBet");
+    bullets.push("This node is about defending vs a continuation bet: actions are typically Fold/Call/Raise (not betting). Use MDF as a baseline, then adjust by range/position/runouts.");
+    glossary.push("CBet", "MDF");
   }
   if (node.includes("BARREL") || node.includes("TRIPLE")) {
-    bullets.push("Turn/river barreling nodes depend heavily on range advantage and equity realization; frequency tends to polarize as streets progress.");
+    bullets.push("Turn/river barreling nodes depend heavily on equity realization and blockers; ranges often polarize as streets progress.");
     glossary.push("Polar");
   }
 
   // NOTE: MVP heuristic strategy. Replaceable with solver-backed engine later.
+  // Defense nodes: output Fold/Call/Raise mix.
+  if (node.includes("VS_CBET")) {
+    const base: MixedStrategy = { FOLD: 0.25, CALL: 0.6, RAISE_75: 0.15 };
+    if (texture === "twoTone" || texture === "two-tone") {
+      base.FOLD = 0.22;
+      base.CALL = 0.58;
+      base.RAISE_75 = 0.2;
+    }
+    if (texture === "paired") {
+      base.FOLD = 0.28;
+      base.CALL = 0.62;
+      base.RAISE_75 = 0.1;
+    }
+    return {
+      strategy: base,
+      reason: "Versus a c-bet, defend mostly by calling and some raising; fold the weakest portion.",
+      bullets: [...bullets, "MDF is a baseline; raise more on textures that favor your nut advantage and on turns that shift equity."],
+      glossary,
+      spr
+    };
+  }
+
   if (texture === "paired") {
     return {
-      strategy: { CHECK: 0.35, BET_25: 0.55, BET_75: 0.1, BET_33: 0, BET_66: 0 },
+      strategy: { CHECK: 0.35, BET_25: 0.55, BET_75: 0.1 },
       reason: "Paired boards often reduce nut advantage. Mixed small c-bets keep ranges wide.",
       bullets: [...bullets, "Paired textures often reduce strong hand density, so small bets + checks are common."],
       glossary: [...glossary, "CBet", "RangeBet"],
@@ -205,7 +237,7 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
 
   if (texture === "twoTone" || texture === "two-tone") {
     return {
-      strategy: { CHECK: 0.5, BET_33: 0.35, BET_75: 0.15, BET_25: 0, BET_66: 0 },
+      strategy: { CHECK: 0.5, BET_33: 0.35, BET_75: 0.15 },
       reason: "Two-tone boards add flush draws: increase checking and keep some big bets.",
       bullets: [...bullets, "Flush draws increase the value of checking and protect your checking range."],
       glossary: [...glossary, "CBet"],
@@ -215,7 +247,7 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
 
   if (potType === "4BP" || base.includes("4bet")) {
     return {
-      strategy: { CHECK: 0.25, BET_25: 0.6, BET_75: 0.15, BET_33: 0, BET_66: 0 },
+      strategy: { CHECK: 0.25, BET_25: 0.6, BET_75: 0.15 },
       reason: "4-bet pots are typically low SPR and range-constrained; small bets are common.",
       bullets: [...bullets, "Low SPR spots often support more betting with strong overpairs/top pairs."],
       glossary: [...glossary, "CBet"],
@@ -225,7 +257,7 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
 
   if (tags.includes("sticky")) {
     return {
-      strategy: { CHECK: 0.25, BET_66: 0.45, BET_75: 0.3, BET_25: 0, BET_33: 0 },
+      strategy: { CHECK: 0.25, BET_66: 0.45, BET_75: 0.3 },
       reason: "Versus sticky opponents, shift toward larger polarized betting.",
       bullets: [...bullets, "If villain overcalls, larger sizings extract more value and pressure draws."],
       glossary: [...glossary, "Polar"],
@@ -234,7 +266,7 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
   }
 
   return {
-    strategy: { CHECK: 0.3, BET_33: 0.55, BET_75: 0.15, BET_25: 0, BET_66: 0 },
+    strategy: { CHECK: 0.3, BET_33: 0.55, BET_75: 0.15 },
     reason: "Default heuristic: mostly small c-bet with some checks and occasional big bets.",
     bullets: [...bullets, "On neutral textures, small c-bets are a common baseline in many game trees."],
     glossary,
@@ -274,9 +306,10 @@ export function generateSpot(input: SpotInput): SpotOutput {
 }
 
 function topAction(strategy: MixedStrategy): ActionToken {
-  let best: ActionToken = "CHECK";
+  const keys = Object.keys(strategy) as ActionToken[];
+  let best: ActionToken = (keys[0] ?? "CHECK") as ActionToken;
   let bestW = -1;
-  (Object.keys(strategy) as ActionToken[]).forEach((k) => {
+  keys.forEach((k) => {
     const w = strategy[k] ?? 0;
     if (w > bestW) {
       bestW = w;

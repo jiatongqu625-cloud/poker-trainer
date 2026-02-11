@@ -7,7 +7,8 @@ export type GlossaryKey =
   | "IP"
   | "CBet"
   | "RangeBet"
-  | "Polar";
+  | "Polar"
+  | "MDF";
 
 export const GLOSSARY: Record<GlossaryKey, { term: string; definition: string; example?: string }> = {
   SPR: {
@@ -48,6 +49,12 @@ export const GLOSSARY: Record<GlossaryKey, { term: string; definition: string; e
     term: "Polarized betting",
     definition:
       "A strategy where betting range is weighted toward very strong hands and bluffs, while medium-strength hands check more often."
+  },
+  MDF: {
+    term: "MDF (Minimum Defense Frequency)",
+    definition:
+      "How often you must continue (call/raise) versus a bet to prevent the bettor from profiting with any two cards. In practice, MDF is a baseline; real defense depends on ranges and future streets.",
+    example: "Versus a pot-size bet, MDF is 50%. Versus a half-pot bet, MDF is ~67%."
   }
 };
 

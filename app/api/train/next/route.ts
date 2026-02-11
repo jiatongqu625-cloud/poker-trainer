@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     players: scenario.players,
     preflopAction: scenario.preflopAction,
     preflopConfig: (scenario.preflopConfig as any) ?? null,
-    trainingNode: (scenario as any).trainingNode ?? "FLOP",
+    trainingNode: (scenario as any).trainingNode ?? "FLOP_CBET",
     flopTexture: scenario.flopTexture,
     flopTextureWeights: (scenario.flopTextureWeights as any) ?? {},
     boardProfileWeights: ((scenario as any).boardProfileWeights as any) ?? {},
@@ -44,6 +44,7 @@ export async function POST(req: Request) {
       spot: {
         board: spot.board,
         texture: spot.texture,
+        node: (scenario as any).trainingNode ?? "FLOP_CBET",
         boardProfile: spot.boardProfile,
         spr: spot.spr,
         explanation: spot.explanation
@@ -56,6 +57,7 @@ export async function POST(req: Request) {
     heroHand: hand.heroHand,
     board: (hand.spot as any)?.board,
     texture: hand.boardTexture,
+    node: (hand.spot as any)?.node ?? "FLOP_CBET",
     boardProfile: (hand.spot as any)?.boardProfile ?? [],
     spr: (hand.spot as any)?.spr ?? null,
     recommendedStrategy: hand.recommendedStrategy,
@@ -88,6 +90,7 @@ export async function PATCH(req: Request) {
     heroHand: updated.heroHand,
     board: (updated.spot as any)?.board,
     texture: updated.boardTexture,
+    node: (updated.spot as any)?.node ?? "FLOP_CBET",
     boardProfile: (updated.spot as any)?.boardProfile ?? [],
     spr: (updated.spot as any)?.spr ?? null,
     recommendedStrategy: updated.recommendedStrategy,
