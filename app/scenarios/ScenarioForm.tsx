@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { DEFAULT_NODE, TRAINING_NODES } from "@/lib/nodes";
 
 export default function ScenarioForm() {
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ export default function ScenarioForm() {
     const aggressor = String(formData.get("aggressor") || heroPos);
     const callers = Number(formData.get("callers") || 1);
 
-    const trainingNode = String(formData.get("trainingNode") || "FLOP");
+    const trainingNode = String(formData.get("trainingNode") || DEFAULT_NODE);
 
     const preflopConfig = {
       potType,
@@ -140,10 +141,12 @@ export default function ScenarioForm() {
         <input name="aggressor" placeholder="Preflop aggressor position (e.g. BTN)" />
         <input name="callers" type="number" min="0" defaultValue={1} placeholder="# of callers" />
 
-        <select name="trainingNode" defaultValue="FLOP">
-          <option value="FLOP">Flop decision</option>
-          <option value="TURN">Turn decision</option>
-          <option value="RIVER">River decision</option>
+        <select name="trainingNode" defaultValue={DEFAULT_NODE}>
+          {TRAINING_NODES.map((n) => (
+            <option key={n.value} value={n.value}>
+              {n.label}
+            </option>
+          ))}
         </select>
 
         <select name="flopTexture" defaultValue="rainbow">

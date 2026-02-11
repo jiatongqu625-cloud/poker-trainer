@@ -172,12 +172,25 @@ function recommendStrategy(input: SpotInput, texture: string): { strategy: Mixed
   const potAtFlop = estimatePotAtFlopBb(potType, callers);
   const spr = input.stackBb / Math.max(1, potAtFlop);
 
+  const node = String(input.trainingNode ?? "FLOP_CBET");
+
   const bullets = [
+    `Training node: ${node}.`,
     `Pot type: ${potType}. Estimated pot at flop: ~${potAtFlop.toFixed(1)}bb.`,
     `Effective stack: ${input.stackBb}bb → SPR ≈ ${spr.toFixed(1)}.`
   ];
 
   const glossary = ["SPR", potType];
+
+  // Node-aware tweaks (MVP):
+  if (node.includes("VS_CBET")) {
+    bullets.push("This node is about defending vs a continuation bet; expect more calling/raising and fewer pure bets.");
+    glossary.push("CBet");
+  }
+  if (node.includes("BARREL") || node.includes("TRIPLE")) {
+    bullets.push("Turn/river barreling nodes depend heavily on range advantage and equity realization; frequency tends to polarize as streets progress.");
+    glossary.push("Polar");
+  }
 
   // NOTE: MVP heuristic strategy. Replaceable with solver-backed engine later.
   if (texture === "paired") {
