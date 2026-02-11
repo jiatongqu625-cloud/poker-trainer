@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum DrillResult {
+  CORRECT
+  WRONG
+  DEVIATION
+}
+
+model User {
+  id          String         @id @default(cuid())
+  sessionId   String         @unique
+  createdAt   DateTime       @default(now())
+  drillSessions DrillSession[]
+  scenarios   Scenario[]
+  opponents   OpponentProfile[]
+}
+
+model Scenario {
+  id                 String        @id @default(cuid())
+  name               String
+  position           String
+  stackBb            Int
+  players            Int
+  preflopAction      String
+  flopTexture        String
+  flopTextureWeights Json
+  opponentTags       Json
+  weight             Int           @default(1)
+  parentId           String?
+  userId             String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  parent             Scenario?     @relation("ScenarioParent", fields: [parentId], references: [id])
+  children           Scenario[]    @relation("ScenarioParent")
+  user               User?         @relation(fields: [userId], references: [id])
+  drillSessions      DrillSession[]
+  drillHands         DrillHand[]
+
+  @@index([userId])
+  @@index([parentId])
+}
+
+model DrillSession {
+  id         String      @id @default(cuid())
+  userId     String
+  scenarioId String
+  createdAt  DateTime    @default(now())
+
+  user       User        @relation(fields: [userId], references: [id])
+  scenario   Scenario    @relation(fields: [scenarioId], references: [id])
+  hands      DrillHand[]
+
+  @@index([userId])
+  @@index([scenarioId])
+}
+
+model DrillHand {
+  id                   String       @id @default(cuid())
+  sessionId            String
+  scenarioId           String
+  heroHand             String
+  boardTexture         String
+  recommendedAction    String
+  recommendationReason String
+  userAction           String?
+  result               DrillResult?
+  spot                 Json
+  createdAt            DateTime     @default(now())
+
+  session              DrillSession @relation(fields: [sessionId], references: [id])
+  scenario             Scenario     @relation(fields: [scenarioId], references: [id])
+
+  @@index([sessionId])
+  @@index([scenarioId])
+}
+
+model OpponentProfile {
+  id            String        @id @default(cuid())
+  userId        String
+  name          String
+  notes         String        @default("")
+  hands         Int           @default(0)
+  vpipCount     Int           @default(0)
+  pfrCount      Int           @default(0)
+  threeBetCount Int           @default(0)
+  cbetCount     Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id])
+  histories     HandHistory[]
+
+  @@index([userId])
+}
+
+model HandHistory {
+  id          String           @id @default(cuid())
+  opponentId  String
+  rawText     String
+  parsedAt    DateTime         @default(now())
+  createdAt   DateTime         @default(now())
+
+  opponent    OpponentProfile  @relation(fields: [opponentId], references: [id])
+
+  @@index([opponentId])
+}
