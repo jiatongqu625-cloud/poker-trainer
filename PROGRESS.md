@@ -32,7 +32,7 @@ Last updated: 2026-02-11
 
 ## 🚧 In progress
 - Expand node taxonomy to cover common SRP/3BP/4BP postflop branches in a consistent naming scheme (donk/probe/delayed/xr/etc).
-- Make engine output action-sets strictly consistent with node type (betting nodes vs defense nodes vs XR nodes).
+- Make engine output action-sets strictly consistent with node type (betting nodes vs defense nodes vs XR nodes). (Now server returns allowedActions; continue expanding coverage.)
 - Improve board generation to better reflect boardProfileWeights (wet/dry/high/low + connectedness/pairing).
 
 ## ⏭️ Next
