@@ -9,11 +9,15 @@ export type SpotInput = {
   opponentTags: string[];
 };
 
+export type ActionToken = "CHECK" | "BET_25" | "BET_33" | "BET_66" | "BET_75";
+
+export type MixedStrategy = Record<ActionToken, number>;
+
 export type SpotOutput = {
   heroHand: string;
   board: string;
   texture: string;
-  recommendedAction: string;
+  recommendedStrategy: MixedStrategy;
   reason: string;
 };
 
@@ -91,41 +95,42 @@ function buildBoard(texture: string) {
   return cards.join(" ");
 }
 
-function recommendAction(input: SpotInput, texture: string) {
+function recommendStrategy(input: SpotInput, texture: string): { strategy: MixedStrategy; reason: string } {
   const base = input.preflopAction.toLowerCase();
   const tags = input.opponentTags.map((t) => t.toLowerCase());
 
+  // NOTE: MVP heuristic strategy. Replaceable with solver-backed engine later.
   if (texture === "paired") {
     return {
-      action: "Range bet 25%",
-      reason: "Paired boards reduce nut advantage; small c-bet keeps range wide."
+      strategy: { CHECK: 0.35, BET_25: 0.55, BET_75: 0.1, BET_33: 0, BET_66: 0 },
+      reason: "Paired boards often reduce nut advantage. Mixed small c-bets keep range wide."
     };
   }
 
   if (texture === "twoTone" || texture === "two-tone") {
     return {
-      action: "Check or 33% c-bet",
-      reason: "Flush draws increase check frequency; mix small bets with checks."
+      strategy: { CHECK: 0.5, BET_33: 0.35, BET_75: 0.15, BET_25: 0, BET_66: 0 },
+      reason: "Flush draws increase checking. Mix checks with small and occasional bigger bets."
     };
   }
 
   if (base.includes("4bet")) {
     return {
-      action: "Small c-bet 25%",
-      reason: "4-bet pots favor the aggressor; small sizing pressures capped ranges."
+      strategy: { CHECK: 0.25, BET_25: 0.6, BET_75: 0.15, BET_33: 0, BET_66: 0 },
+      reason: "4-bet pots favor the aggressor. Small bets apply pressure while keeping bluffs." 
     };
   }
 
   if (tags.includes("sticky")) {
     return {
-      action: "Polar bet 66%",
-      reason: "Sticky opponents overcall; polarize and size up for value/bluffs."
+      strategy: { CHECK: 0.25, BET_66: 0.45, BET_75: 0.3, BET_25: 0, BET_33: 0 },
+      reason: "Versus sticky opponents, shift toward larger polarized betting for value/bluffs."
     };
   }
 
   return {
-    action: "C-bet 33%",
-    reason: "Standard strategy on low-connected rainbow boards."
+    strategy: { CHECK: 0.3, BET_33: 0.55, BET_75: 0.15, BET_25: 0, BET_66: 0 },
+    reason: "Default heuristic: mostly small c-bet with some checks and some bigger bets."
   };
 }
 
@@ -136,22 +141,37 @@ export function generateSpot(input: SpotInput): SpotOutput {
   );
   const heroHand = randomHand();
   const board = buildBoard(texture);
-  const recommendation = recommendAction(input, texture);
+  const recommendation = recommendStrategy(input, texture);
 
   return {
     heroHand,
     board,
     texture,
-    recommendedAction: recommendation.action,
+    recommendedStrategy: recommendation.strategy,
     reason: recommendation.reason
   };
 }
 
-export function gradeAction(userAction: string, recommendedAction: string) {
-  const user = userAction.toLowerCase();
-  const rec = recommendedAction.toLowerCase();
-  if (user === rec) return "CORRECT" as const;
-  if (user.includes("check") && rec.includes("check")) return "CORRECT" as const;
-  if (user.includes("bet") && rec.includes("bet")) return "DEVIATION" as const;
+function topAction(strategy: MixedStrategy): ActionToken {
+  let best: ActionToken = "CHECK";
+  let bestW = -1;
+  (Object.keys(strategy) as ActionToken[]).forEach((k) => {
+    const w = strategy[k] ?? 0;
+    if (w > bestW) {
+      bestW = w;
+      best = k;
+    }
+  });
+  return best;
+}
+
+export function gradeAction(userAction: ActionToken, strategy: MixedStrategy) {
+  const top = topAction(strategy);
+  if (userAction === top) return "CORRECT" as const;
+
+  const w = strategy[userAction] ?? 0;
+  // Treat "in-range" action as deviation, not hard-wrong.
+  if (w >= 0.15) return "DEVIATION" as const;
+
   return "WRONG" as const;
 }

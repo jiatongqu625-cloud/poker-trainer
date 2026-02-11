@@ -32,22 +32,22 @@ export default async function DashboardPage() {
     <main className="space-y-6">
       <section className="grid md:grid-cols-3 gap-4">
         <div className="card">
-          <p className="text-sm text-white/60">最近 50 手</p>
+          <p className="text-sm text-white/60">Last 50 hands</p>
           <p className="text-3xl font-semibold">{total}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-white/60">正确率</p>
+          <p className="text-sm text-white/60">Accuracy</p>
           <p className="text-3xl font-semibold">{pct(correct, total)}</p>
-          <p className="text-xs text-white/40">偏差占比 {pct(deviations, total)}</p>
+          <p className="text-xs text-white/40">Deviation rate {pct(deviations, total)}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-white/60">常犯错</p>
+          <p className="text-sm text-white/60">Top mistakes</p>
           <div className="space-y-2 text-sm">
-            {topMistakes.length === 0 && <p className="text-white/40">暂无数据</p>}
+            {topMistakes.length === 0 && <p className="text-white/40">No data yet</p>}
             {topMistakes.map(([key, count]) => (
               <div key={key} className="flex items-center justify-between">
                 <span>{key}</span>
-                <span className="text-white/60">{count} 手</span>
+                <span className="text-white/60">{count}</span>
               </div>
             ))}
           </div>
@@ -55,10 +55,10 @@ export default async function DashboardPage() {
       </section>
 
       <section className="card space-y-3">
-        <h2 className="text-lg font-semibold">快速入口</h2>
+        <h2 className="text-lg font-semibold">Quick links</h2>
         <div className="flex flex-wrap gap-3">
-          <Link className="badge" href="/scenarios">去配置场景</Link>
-          <Link className="badge" href="/opponents">管理对手画像</Link>
+          <Link className="badge" href="/scenarios">Configure scenarios</Link>
+          <Link className="badge" href="/opponents">Manage opponents</Link>
         </div>
       </section>
     </main>

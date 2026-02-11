@@ -68,8 +68,12 @@ model DrillHand {
   scenarioId           String
   heroHand             String
   boardTexture         String
-  recommendedAction    String
+
+  /// Mixed strategy recommendation, e.g. {"CHECK":0.45,"BET_25":0.35,"BET_75":0.20}
+  recommendedStrategy  Json
   recommendationReason String
+
+  /// User selected one action token, e.g. CHECK/BET_25/BET_33/BET_66/BET_75
   userAction           String?
   result               DrillResult?
   spot                 Json

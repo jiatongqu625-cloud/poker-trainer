@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 
+type MixedStrategy = Record<string, number>;
+
 type DrillHand = {
   id: string;
   heroHand: string;
   board: string;
   texture: string;
-  recommendedAction: string;
+  recommendedStrategy: MixedStrategy;
   reason: string;
   userAction?: string | null;
   result?: string | null;
@@ -19,18 +21,17 @@ type Scenario = {
 };
 
 const ACTIONS = [
-  "Check",
-  "C-bet 25%",
-  "C-bet 33%",
-  "Check or 33% c-bet",
-  "Range bet 25%",
-  "Polar bet 66%"
-];
+  { label: "Check", value: "CHECK" },
+  { label: "Bet 25% pot", value: "BET_25" },
+  { label: "Bet 33% pot", value: "BET_33" },
+  { label: "Bet 66% pot", value: "BET_66" },
+  { label: "Bet 75% pot", value: "BET_75" }
+] as const;
 
 export default function TrainPanel({ scenario }: { scenario: Scenario }) {
   const [hand, setHand] = useState<DrillHand | null>(null);
   const [loading, setLoading] = useState(false);
-  const [action, setAction] = useState(ACTIONS[0]);
+  const [action, setAction] = useState<(typeof ACTIONS)[number]["value"]>(ACTIONS[0].value);
 
   async function loadHand() {
     setLoading(true);
@@ -41,7 +42,7 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
     });
     const data = await res.json();
     setHand(data);
-    setAction(ACTIONS[0]);
+    setAction(ACTIONS[0].value);
     setLoading(false);
   }
 
@@ -76,56 +77,66 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
   return (
     <div className="card space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">训练中: {scenario.name}</h2>
+        <h2 className="text-lg font-semibold">Training: {scenario.name}</h2>
         <button type="button" onClick={loadHand} disabled={loading}>
-          {loading ? "生成中..." : "下一手"}
+          {loading ? "Generating..." : "Next hand"}
         </button>
       </div>
 
-      {!hand && <p className="text-sm text-white/60">生成训练手牌中...</p>}
+      {!hand && <p className="text-sm text-white/60">Generating a training hand...</p>}
       {hand && (
         <div className="space-y-3">
           <div className="grid md:grid-cols-3 gap-3">
             <div className="card">
-              <p className="text-xs text-white/50">Hero 手牌</p>
+              <p className="text-xs text-white/50">Hero hand</p>
               <p className="text-xl font-semibold">{hand.heroHand}</p>
             </div>
             <div className="card">
-              <p className="text-xs text-white/50">公共牌</p>
+              <p className="text-xs text-white/50">Board</p>
               <p className="text-xl font-semibold">{hand.board}</p>
             </div>
             <div className="card">
-              <p className="text-xs text-white/50">纹理标签</p>
+              <p className="text-xs text-white/50">Texture</p>
               <p className="text-xl font-semibold">{hand.texture}</p>
             </div>
           </div>
 
           <div className="card space-y-2">
-            <p className="text-sm text-white/50">推荐动作</p>
-            <p className="text-lg font-semibold">{hand.recommendedAction}</p>
+            <p className="text-sm text-white/50">Recommended strategy (mix)</p>
+            <div className="text-sm text-white/80 space-y-1">
+              {Object.entries(hand.recommendedStrategy)
+                .filter(([, w]) => Number(w) > 0)
+                .sort((a, b) => Number(b[1]) - Number(a[1]))
+                .map(([k, w]) => (
+                  <div key={k} className="flex items-center justify-between">
+                    <span>{k}</span>
+                    <span className="text-white/60">{Math.round(Number(w) * 100)}%</span>
+                  </div>
+                ))}
+            </div>
             <p className="text-sm text-white/60">{hand.reason}</p>
           </div>
 
           <div className="card space-y-2">
-            <p className="text-sm text-white/50">你的选择</p>
+            <p className="text-sm text-white/50">Your action</p>
             <div className="flex flex-wrap gap-2">
-              <select value={action} onChange={(event) => setAction(event.target.value)}>
+              <select value={action} onChange={(event) => setAction(event.target.value as any)}>
                 {ACTIONS.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
+                  <option key={item.value} value={item.value}>
+                    {item.label}
                   </option>
                 ))}
               </select>
               <button type="button" onClick={submitAction} disabled={loading}>
-                提交
+                Submit
               </button>
               <button type="button" className="bg-white/10 text-white" onClick={boostSpot} disabled={loading}>
-                加练这个点
+                Drill this spot more
               </button>
             </div>
             {hand.result && (
               <p className="text-sm text-white/70">
-                结果: {hand.result} {hand.userAction ? `(你的动作: ${hand.userAction})` : null}
+                Result: {hand.result} {hand.userAction ? `(your action: ${hand.userAction})` : null}
               </p>
             )}
           </div>
