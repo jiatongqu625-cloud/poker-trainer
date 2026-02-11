@@ -79,25 +79,71 @@ function randomCard(exclude: Set<string>) {
   return card;
 }
 
-function buildBoard(texture: string) {
+function pickRank(ranks: string[]) {
+  return ranks[Math.floor(Math.random() * ranks.length)];
+}
+
+function buildBoard(texture: string, boardProfile: string[]) {
   const used = new Set<string>();
+
+  const wantsWet = boardProfile.includes("wet");
+  const wantsLow = boardProfile.includes("low");
+
+  const highRanks = ["A", "K", "Q", "J", "T"];
+  const lowRanks = ["9", "8", "7", "6", "5", "4", "3", "2"];
+  const pool = wantsLow ? lowRanks : highRanks.concat(["9"]);
+
+  function makeCard(rank: string, suit: string) {
+    const c = `${rank}${suit}`;
+    if (used.has(c)) return null;
+    used.add(c);
+    return c;
+  }
+
   if (texture === "paired") {
-    const rank = RANKS[Math.floor(Math.random() * RANKS.length)];
+    const rank = pickRank(pool);
     const suit1 = SUITS[Math.floor(Math.random() * SUITS.length)];
     const suit2 = SUITS.filter((s) => s !== suit1)[Math.floor(Math.random() * 3)];
     used.add(`${rank}${suit1}`);
     used.add(`${rank}${suit2}`);
-    const kicker = randomCard(used);
+    const kickerRank = pickRank(pool);
+    const kickerSuit = SUITS[Math.floor(Math.random() * SUITS.length)];
+    const kicker = makeCard(kickerRank, kickerSuit) ?? randomCard(used);
     return `${rank}${suit1} ${rank}${suit2} ${kicker}`;
   }
 
   if (texture === "twoTone" || texture === "two-tone") {
     const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
     const offSuit = SUITS.filter((s) => s !== suit)[Math.floor(Math.random() * 3)];
-    const card1 = `${RANKS[Math.floor(Math.random() * RANKS.length)]}${suit}`;
-    const card2 = `${RANKS[Math.floor(Math.random() * RANKS.length)]}${suit}`;
-    const card3 = `${RANKS[Math.floor(Math.random() * RANKS.length)]}${offSuit}`;
+
+    // If wet, try to bias toward connected ranks.
+    if (wantsWet) {
+      const startIdx = Math.floor(Math.random() * Math.max(1, pool.length - 3));
+      const seq = pool.slice(startIdx, startIdx + 3);
+      const r1 = seq[0] ?? pickRank(pool);
+      const r2 = seq[1] ?? pickRank(pool);
+      const r3 = seq[2] ?? pickRank(pool);
+      const c1 = makeCard(r1, suit) ?? randomCard(used);
+      const c2 = makeCard(r2, suit) ?? randomCard(used);
+      const c3 = makeCard(r3, offSuit) ?? randomCard(used);
+      return `${c1} ${c2} ${c3}`;
+    }
+
+    const card1 = `${pickRank(pool)}${suit}`;
+    const card2 = `${pickRank(pool)}${suit}`;
+    const card3 = `${pickRank(pool)}${offSuit}`;
     return `${card1} ${card2} ${card3}`;
+  }
+
+  // rainbow / default
+  if (wantsWet) {
+    // Connected-ish ranks, random suits.
+    const startIdx = Math.floor(Math.random() * Math.max(1, pool.length - 3));
+    const seq = pool.slice(startIdx, startIdx + 3);
+    const c1 = `${seq[0] ?? pickRank(pool)}${SUITS[Math.floor(Math.random() * SUITS.length)]}`;
+    const c2 = `${seq[1] ?? pickRank(pool)}${SUITS[Math.floor(Math.random() * SUITS.length)]}`;
+    const c3 = `${seq[2] ?? pickRank(pool)}${SUITS[Math.floor(Math.random() * SUITS.length)]}`;
+    return `${c1} ${c2} ${c3}`;
   }
 
   const cards = [randomCard(used), randomCard(used), randomCard(used)];
@@ -196,7 +242,7 @@ export function generateSpot(input: SpotInput): SpotOutput {
   const boardProfile = [dryness, highness];
 
   const heroHand = randomHand();
-  const board = buildBoard(texture);
+  const board = buildBoard(texture, boardProfile);
   const recommendation = recommendStrategy(input, texture);
 
   return {
