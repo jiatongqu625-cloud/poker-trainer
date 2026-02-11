@@ -351,7 +351,9 @@ function topAction(strategy: MixedStrategy): ActionToken {
   return best;
 }
 
-export function gradeAction(userAction: ActionToken, strategy: MixedStrategy) {
+export function gradeAction(userAction: ActionToken, strategy: MixedStrategy, allowed?: ActionToken[]) {
+  if (allowed && !allowed.includes(userAction)) return "WRONG" as const;
+
   const top = topAction(strategy);
   if (userAction === top) return "CORRECT" as const;
 
