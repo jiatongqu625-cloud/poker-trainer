@@ -27,7 +27,7 @@ Last updated: 2026-02-11
   - Quick spot builder (human inputs → suggested training node)
   - Engine heuristics are node-aware
   - VS_CBET nodes use Fold/Call/Raise actions + MDF term
-  - Expanded nodes: probe / delayed / XR / donk (MVP)
+  - Expanded nodes: probe / delayed / XR / donk / facing-raise (MVP)
   - Training UI switches action sets based on node kind (betting/defense/XR)
 
 ## 🚧 In progress
