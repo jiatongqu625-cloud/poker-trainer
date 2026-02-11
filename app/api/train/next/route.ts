@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getOrCreateUser } from "@/lib/session";
 import { generateSpot, gradeAction, type ActionToken } from "@/lib/engine";
+import { allowedActionsForNode } from "@/lib/actions";
 
 export async function POST(req: Request) {
   const user = await getOrCreateUser();
@@ -52,12 +53,14 @@ export async function POST(req: Request) {
     }
   });
 
+  const node = (hand.spot as any)?.node ?? "FLOP_CBET";
   return NextResponse.json({
     id: hand.id,
     heroHand: hand.heroHand,
     board: (hand.spot as any)?.board,
     texture: hand.boardTexture,
-    node: (hand.spot as any)?.node ?? "FLOP_CBET",
+    node,
+    allowedActions: allowedActionsForNode(node),
     boardProfile: (hand.spot as any)?.boardProfile ?? [],
     spr: (hand.spot as any)?.spr ?? null,
     recommendedStrategy: hand.recommendedStrategy,
@@ -85,12 +88,14 @@ export async function PATCH(req: Request) {
     data: { userAction: userAction as string, result }
   });
 
+  const node = (updated.spot as any)?.node ?? "FLOP_CBET";
   return NextResponse.json({
     id: updated.id,
     heroHand: updated.heroHand,
     board: (updated.spot as any)?.board,
     texture: updated.boardTexture,
-    node: (updated.spot as any)?.node ?? "FLOP_CBET",
+    node,
+    allowedActions: allowedActionsForNode(node),
     boardProfile: (updated.spot as any)?.boardProfile ?? [],
     spr: (updated.spot as any)?.spr ?? null,
     recommendedStrategy: updated.recommendedStrategy,

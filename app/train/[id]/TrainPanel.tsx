@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { GLOSSARY } from "@/lib/glossary";
-import { isXRNode, nodeKind } from "@/lib/nodes";
 
 type MixedStrategy = Record<string, number>;
+
+type ActionOption = { label: string; value: string };
 
 type GlossaryEntry = { term: string; definition: string; example?: string };
 
@@ -16,6 +17,7 @@ type DrillHand = {
   node?: string;
   boardProfile?: string[];
   spr?: number | null;
+  allowedActions?: ActionOption[];
   recommendedStrategy: MixedStrategy;
   reason: string;
   explanation?: { bullets: string[]; glossary: string[] } | null;
@@ -28,31 +30,16 @@ type Scenario = {
   name: string;
 };
 
-const ACTIONS_CBET = [
+const FALLBACK_ACTIONS: ActionOption[] = [
   { label: "Check", value: "CHECK" },
-  { label: "Bet 25% pot", value: "BET_25" },
   { label: "Bet 33% pot", value: "BET_33" },
-  { label: "Bet 66% pot", value: "BET_66" },
   { label: "Bet 75% pot", value: "BET_75" }
-] as const;
-
-const ACTIONS_DEFENSE = [
-  { label: "Fold", value: "FOLD" },
-  { label: "Call", value: "CALL" },
-  { label: "Raise 33% pot", value: "RAISE_33" },
-  { label: "Raise 75% pot", value: "RAISE_75" },
-  { label: "Jam", value: "JAM" }
-] as const;
-
-const ACTIONS_XR = [
-  { label: "Check", value: "CHECK" },
-  { label: "Raise 75% pot", value: "RAISE_75" }
-] as const;
+];
 
 export default function TrainPanel({ scenario }: { scenario: Scenario }) {
   const [hand, setHand] = useState<DrillHand | null>(null);
   const [loading, setLoading] = useState(false);
-  const [action, setAction] = useState<string>(ACTIONS_CBET[0].value);
+  const [action, setAction] = useState<string>(FALLBACK_ACTIONS[0].value);
 
   const glossaryEntries: GlossaryEntry[] = useMemo(() => {
     const keys = (hand?.explanation?.glossary ?? []).map((k) => String(k));
@@ -71,8 +58,7 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
     });
     const data = await res.json();
     setHand(data);
-    const node = String(data?.node ?? "");
-    const list = isXRNode(node) ? ACTIONS_XR : nodeKind(node) === "DEFENSE" ? ACTIONS_DEFENSE : ACTIONS_CBET;
+    const list: ActionOption[] = data?.allowedActions?.length ? data.allowedActions : FALLBACK_ACTIONS;
     setAction(list[0].value);
     setLoading(false);
   }
@@ -195,12 +181,7 @@ export default function TrainPanel({ scenario }: { scenario: Scenario }) {
             <p className="text-sm text-white/50">Your action</p>
             <div className="flex flex-wrap gap-2">
               <select value={action} onChange={(event) => setAction(event.target.value)}>
-                {(isXRNode(hand?.node ?? "")
-                  ? ACTIONS_XR
-                  : nodeKind(hand?.node ?? "") === "DEFENSE"
-                    ? ACTIONS_DEFENSE
-                    : ACTIONS_CBET
-                ).map((item) => (
+                {(hand.allowedActions?.length ? hand.allowedActions : FALLBACK_ACTIONS).map((item) => (
                   <option key={item.value} value={item.value}>
                     {item.label}
                   </option>
